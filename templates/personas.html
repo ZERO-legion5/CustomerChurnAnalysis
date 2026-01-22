@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChurnGuard | Customer Personas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --dark: #212529;
+            --light: #f8f9fa;
+        }
+        body { background: #f0f2f5; font-family: 'Inter', sans-serif; }
+        .sidebar { background: white; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.05); position: fixed; width: inherit; z-index: 100; }
+        .nav-link { color: #4a5568; padding: 1rem 1.5rem; border-radius: 10px; margin: 0.2rem 1rem; transition: all 0.3s; }
+        .nav-link:hover { background: #f7fafc; color: var(--primary); }
+        .nav-link.active { background: var(--primary); color: white; }
+        .main-content { padding: 3rem; margin-left: 16.666667%; }
+        .dashboard-card { background: white; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 2rem; }
+        .persona-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .cluster-0 { background: #4361ee; color: white; }
+        .cluster-1 { background: #4cc9f0; color: white; }
+        .cluster-2 { background: #f72585; color: white; }
+        .cluster-3 { background: #7209b7; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 p-0 sidebar">
+            <div class="p-4 mb-4">
+                <h4 class="fw-bold text-primary"><i class="fas fa-shield-halved me-2"></i>ChurnGuard</h4>
+            </div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="/"><i class="fas fa-brain me-2"></i> Predictor</a>
+                <a class="nav-link" href="/dashboard"><i class="fas fa-chart-pie me-2"></i> Dashboard</a>
+                <a class="nav-link active" href="/personas"><i class="fas fa-users-cog me-2"></i> Personas</a>
+                <a class="nav-link" href="/chat"><i class="fas fa-comments me-2"></i> AI Chat</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 main-content">
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <h2 class="fw-bold">Customer Segmentation (Personas)</h2>
+                <span class="badge bg-dark p-2">K-Means Unsupervised Learning</span>
+            </div>
+
+            <div class="row">
+                <!-- 3D Visualization -->
+                <div class="col-lg-8">
+                    <div class="card dashboard-card">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-4">3D Behavioral Clusters (Age vs Balance vs Credit Score)</h5>
+                            <div id="clusterPlot" style="height: 600px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Persona Summary -->
+                <div class="col-lg-4">
+                    <div class="card dashboard-card">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-4">Persona Insights</h5>
+                            {% for p in persona_data %}
+                            <div class="mb-4 p-3 border rounded shadow-sm">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="persona-badge cluster-{{ p.id }}">Persona Group {{ p.id + 1 }}</span>
+                                    <span class="small text-muted">{{ p.count }} Customers</span>
+                                </div>
+                                <div class="small">
+                                    <p class="mb-1"><strong>Avg Age:</strong> {{ p.avg_age }} yrs</p>
+                                    <p class="mb-1"><strong>Avg Balance:</strong> ${{ p.avg_balance }}</p>
+                                    <p class="mb-1"><strong>Avg Credit:</strong> {{ p.avg_credit }}</p>
+                                    <p class="mb-0"><strong>Churn Rate:</strong> <span class="{% if p.churn_rate > 20 %}text-danger{% else %}text-success{% endif %}">{{ p.churn_rate }}%</span></p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const plotData = {{ plot_data | tojson }};
+    const colors = ['#4361ee', '#4cc9f0', '#f72585', '#7209b7'];
+    
+    const data = [{
+        x: plotData.x,
+        y: plotData.y,
+        z: plotData.z,
+        mode: 'markers',
+        marker: {
+            size: 4,
+            color: plotData.cluster.map(c => colors[c]),
+            opacity: 0.8
+        },
+        type: 'scatter3d'
+    }];
+
+    const layout = {
+        scene: {
+            xaxis: {title: 'Age'},
+            yaxis: {title: 'Balance'},
+            zaxis: {title: 'Credit Score'}
+        },
+        margin: {l: 0, r: 0, b: 0, t: 0},
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)'
+    };
+
+    Plotly.newPlot('clusterPlot', data, layout);
+</script>
+
+</body>
+</html>

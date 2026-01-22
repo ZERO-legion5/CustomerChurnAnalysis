@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChurnGuard | AI Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --dark: #212529;
+            --light: #f8f9fa;
+        }
+        body { background: #f0f2f5; font-family: 'Inter', sans-serif; }
+        .sidebar { background: white; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.05); position: fixed; width: inherit; z-index: 100; }
+        .nav-link { color: #4a5568; padding: 1rem 1.5rem; border-radius: 10px; margin: 0.2rem 1rem; transition: all 0.3s; }
+        .nav-link:hover { background: #f7fafc; color: var(--primary); }
+        .nav-link.active { background: var(--primary); color: white; }
+        .main-content { padding: 3rem; margin-left: 16.666667%; }
+        
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 1.5rem;
+            max-width: 80%;
+            padding: 1rem;
+            border-radius: 15px;
+        }
+        .user-message {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
+        }
+        .ai-message {
+            background: white;
+            color: var(--dark);
+            border: 1px solid #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+        .chat-input-area {
+            padding: 1.5rem;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+        }
+        .input-group {
+            background: #f1f5f9;
+            border-radius: 30px;
+            padding: 5px;
+        }
+        #userInput {
+            background: transparent;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            box-shadow: none;
+        }
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            transition: all 0.3s;
+        }
+        .send-btn:hover { background: var(--secondary); transform: scale(1.1); }
+        
+        .typing-indicator {
+            display: none;
+            font-size: 0.8rem;
+            color: #718096;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 p-0 sidebar">
+            <div class="p-4 mb-4">
+                <h4 class="fw-bold text-primary"><i class="fas fa-shield-halved me-2"></i>ChurnGuard</h4>
+            </div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="/"><i class="fas fa-brain me-2"></i> Predictor</a>
+                <a class="nav-link" href="/dashboard"><i class="fas fa-chart-pie me-2"></i> Dashboard</a>
+                <a class="nav-link" href="/personas"><i class="fas fa-users-rectangle me-2"></i> Personas</a>
+                <a class="nav-link active" href="/chat"><i class="fas fa-comments me-2"></i> AI Chat</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 main-content">
+            <div class="row justify-content-center">
+                <div class="col-xl-10">
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <h4 class="fw-bold mb-0"><i class="fas fa-robot me-2"></i>ChurnGuard Data Assistant</h4>
+                            <p class="small mb-0 opacity-75">Ask me about customer statistics and churn trends</p>
+                        </div>
+                        <div class="chat-messages d-flex flex-column" id="chatMessages">
+                            <div class="message ai-message">
+                                Hello! I'm your ChurnGuard AI assistant. I have access to our customer database statistics. How can I help you today?
+                            </div>
+                        </div>
+                        <div class="typing-indicator px-4" id="typingIndicator">
+                            <i class="fas fa-circle-notch fa-spin me-1"></i> AI is thinking...
+                        </div>
+                        <div class="chat-input-area">
+                            <form id="chatForm">
+                                <div class="input-group">
+                                    <input type="text" id="userInput" class="form-control" placeholder="Type your question here..." required>
+                                    <button type="submit" class="send-btn">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center text-muted small">
+                        Example: "What is the average churn rate in Germany?" or "Are active members less likely to churn?"
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatForm = document.getElementById('chatForm');
+    const chatMessages = document.getElementById('chatMessages');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const userInput = document.getElementById('userInput');
+
+    function appendMessage(text, type) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${type === 'user' ? 'user-message' : 'ai-message'}`;
+        msgDiv.innerText = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        appendMessage(message, 'user');
+        userInput.value = '';
+        typingIndicator.style.display = 'block';
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+            const result = await response.json();
+            typingIndicator.style.display = 'none';
+
+            if (result.success) {
+                appendMessage(result.reply, 'ai');
+            } else {
+                appendMessage("Sorry, I encountered an error: " + result.error, 'ai');
+            }
+        } catch (err) {
+            typingIndicator.style.display = 'none';
+            appendMessage("Failed to connect to the AI server.", 'ai');
+        }
+    });
+</script>
+</body>
+</html>
