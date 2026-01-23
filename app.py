@@ -6,14 +6,20 @@ import joblib
 import shap
 import io
 import sqlite3
-import ollama
+import os
+from google import genai
+from google.genai import types
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
 # --- Load Models & Utilities ---
+client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
 model = tf.keras.models.load_model('ann_model.h5')
 scaler = joblib.load('scaler.joblib')
 background_data = joblib.load('background_data.joblib')
@@ -85,12 +91,15 @@ def chat():
         Be professional, data-driven, and concise. If you don't know something based on the data, say so.
         """
         
-        response = ollama.chat(model='llama3.2:3b', messages=[
-            {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': user_msg}
-        ])
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt
+            ),
+            contents=user_msg
+        )
         
-        return jsonify({'success': True, 'reply': response['message']['content']})
+        return jsonify({'success': True, 'reply': response.text})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -198,11 +207,12 @@ def generate_strategy():
         Be polite and personal.
         """
         
-        response = ollama.chat(model='llama3.2:3b', messages=[
-            {'role': 'user', 'content': prompt}
-        ])
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
         
-        strategy = response['message']['content']
+        strategy = response.text
         
         return jsonify({'success': True, 'strategy': strategy})
     except Exception as e:

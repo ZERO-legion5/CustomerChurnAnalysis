@@ -8,8 +8,8 @@ This is a Customer Intelligence & Retention Platform that uses machine learning 
 ## 2. Environment & Commands
 
 ### Setup
-- Install dependencies: `pip install pandas numpy matplotlib seaborn tensorflow scikit-learn xgboost lightgbm catboost flask joblib imbalanced-learn shap reportlab ollama`
-- Ensure Ollama is running with `llama3.2:3b`.
+- Install dependencies: `pip install pandas numpy matplotlib seaborn tensorflow scikit-learn xgboost lightgbm catboost flask joblib imbalanced-learn shap reportlab google-genai`
+- Ensure `GEMINI_API_KEY` is set in your environment.
 
 ### Execution
 - **Run Web App**: `python app.py` (Starts Flask on http://127.0.0.1:5000)

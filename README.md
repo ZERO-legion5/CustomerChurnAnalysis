@@ -49,7 +49,7 @@ The project automatically compares all trained models and outputs a leaderboard.
 - **Supervised Learning (ANN)**: High-accuracy churn prediction trained with SMOTE to handle class imbalance.
 - **Explainable AI (SHAP)**: Individualized risk factor analysis for every prediction, showing exactly *why* a customer might leave.
 - **Unsupervised Learning (K-Means)**: Automatic customer segmentation into behavioral personas, visualized in a live 3D cluster map.
-- **Generative AI (Ollama)**: Local LLM integration (`llama3.2:3b`) to generate personalized retention strategies based on AI insights.
+- **Generative AI (Gemini)**: Integration with Google's `gemini-2.0-flash` to generate personalized retention strategies based on AI insights.
 - **Business Dashboard**: Interactive macro-level analytics using Plotly.js.
 - **Data Persistence**: Analysis history and retention plans saved in a local SQLite database.
 
@@ -57,11 +57,12 @@ The project automatically compares all trained models and outputs a leaderboard.
 
 1. Install dependencies:
    ```bash
-   pip install pandas numpy matplotlib seaborn tensorflow scikit-learn xgboost lightgbm catboost flask joblib imbalanced-learn shap reportlab ollama
+   pip install pandas numpy matplotlib seaborn tensorflow scikit-learn xgboost lightgbm catboost flask joblib imbalanced-learn shap reportlab google-genai
    ```
-2. Ensure **Ollama** is running locally and you have pulled the model:
+2. Set your **Gemini API Key** in your environment:
    ```bash
-   ollama pull llama3.2:3b
+   set GEMINI_API_KEY=your_api_key_here  # Windows
+   export GEMINI_API_KEY=your_api_key_here  # Linux/Mac
    ```
 3. Export the models:
    ```bash
