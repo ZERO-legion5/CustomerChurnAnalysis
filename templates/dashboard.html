@@ -1,108 +1,214 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChurnGuard | Analytics Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-    <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --dark: #212529;
-            --light: #f8f9fa;
-        }
-        body { background: #f0f2f5; font-family: 'Inter', sans-serif; }
-        .sidebar { background: white; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.05); position: fixed; width: inherit; z-index: 100; }
-        .nav-link { color: #4a5568; padding: 1rem 1.5rem; border-radius: 10px; margin: 0.2rem 1rem; transition: all 0.3s; }
-        .nav-link:hover { background: #f7fafc; color: var(--primary); }
-        .nav-link.active { background: var(--primary); color: white; }
-        .main-content { padding: 3rem; margin-left: 16.666667%; }
-        .dashboard-card { background: white; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 2rem; }
-        .card-header { background: none; border-bottom: 1px solid #edf2f7; font-weight: 700; color: #2d3748; padding: 1.25rem; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 p-0 sidebar">
-            <div class="p-4 mb-4">
-                <h4 class="fw-bold text-primary"><i class="fas fa-shield-halved me-2"></i>ChurnGuard</h4>
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row fade-in mb-4">
+    <div class="col-12">
+        <h2 class="h3 mb-0 text-primary pb-2" style="border-bottom: 1px solid rgba(0,243,255,0.3);">Analytics Dashboard</h2>
+    </div>
+</div>
+
+<div class="row fade-in">
+    <!-- Geography Chart -->
+    <div class="col-xl-4 col-lg-5 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold">Churn by Geography</h6>
             </div>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="/"><i class="fas fa-brain me-2"></i> Predictor</a>
-                <a class="nav-link active" href="/dashboard"><i class="fas fa-chart-pie me-2"></i> Dashboard</a>
-                <a class="nav-link" href="/personas"><i class="fas fa-users me-2"></i> Personas</a>
-                <a class="nav-link" href="/chat"><i class="fas fa-comments me-2"></i> AI Chat</a>
-            </nav>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="geoChart"></canvas>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <!-- Main Content -->
-        <div class="col-md-9 col-lg-10 main-content">
-            <div class="d-flex justify-content-between align-items-center mb-5">
-                <h2 class="fw-bold">Platform Analytics</h2>
-                <span class="badge bg-primary-subtle text-primary p-2">Macro Business Intelligence</span>
+    <!-- Balance Chart -->
+    <div class="col-xl-8 col-lg-7 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Average Balance Comparison</h6>
             </div>
-
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="card dashboard-card">
-                        <div class="card-header">Churn Rate by Geography (%)</div>
-                        <div class="card-body">
-                            <div id="geoChart"></div>
-                        </div>
-                    </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="balanceChart"></canvas>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="col-lg-6">
-                    <div class="card dashboard-card">
-                        <div class="card-header">Average Balance: Churn vs Stay</div>
-                        <div class="card-body">
-                            <div id="balanceChart"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12">
-                    <div class="card dashboard-card">
-                        <div class="card-header">Age Distribution Analysis (Retention Curve)</div>
-                        <div class="card-body">
-                            <div id="ageChart"></div>
-                        </div>
-                    </div>
+    <!-- Age Distribution Chart -->
+    <div class="col-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Age Distribution (Churn vs Stay)</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="ageChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
+    // Set Global Chart Defaults for Dark Theme
+    Chart.defaults.color = '#8b9bb4';
+    Chart.defaults.font.family = "'Rajdhani', sans-serif";
+    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.05)';
+    
+    // Data from Flask
     const geoData = {{ geo_stats | tojson }};
-    Plotly.newPlot('geoChart', [{
-        x: Object.keys(geoData),
-        y: Object.values(geoData).map(v => v * 100),
-        type: 'bar',
-        marker: { color: '#4361ee' }
-    }], { margin: { t: 10, b: 40, l: 40, r: 10 }, height: 350 });
-
     const balanceData = {{ balance_stats | tojson }};
-    Plotly.newPlot('balanceChart', [{
-        labels: Object.keys(balanceData),
-        values: Object.values(balanceData),
-        type: 'pie',
-        hole: 0.4,
-        marker: { colors: ['#f56565', '#48bb78'] }
-    }], { margin: { t: 10, b: 10, l: 10, r: 10 }, height: 350 });
+    const ageChurn = {{ age_churn | tojson }};
+    const ageStay = {{ age_stay | tojson }};
 
-    Plotly.newPlot('ageChart', [
-        { x: {{ age_stay | tojson }}, name: 'Stayed', type: 'histogram', opacity: 0.5, marker: { color: '#48bb78' } },
-        { x: {{ age_churn | tojson }}, name: 'Churned', type: 'histogram', opacity: 0.7, marker: { color: '#f56565' } }
-    ], { barmode: 'overlay', margin: { t: 10, b: 40, l: 40, r: 10 }, height: 400 });
+    // 1. Geography Chart (Doughnut)
+    const ctxGeo = document.getElementById('geoChart').getContext('2d');
+    new Chart(ctxGeo, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(geoData),
+            datasets: [{
+                data: Object.values(geoData).map(v => (v * 100).toFixed(1)), // Convert to %
+                backgroundColor: ['#00f3ff', '#0aff60', '#bc13fe'],
+                borderColor: '#0d0e15',
+                borderWidth: 2,
+                hoverOffset: 10
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: { 
+                    callbacks: { label: (c) => ` Churn Rate: ${c.raw}%` },
+                    backgroundColor: 'rgba(5, 5, 8, 0.9)',
+                    titleColor: '#00f3ff',
+                    borderWidth: 1,
+                    borderColor: 'rgba(0, 243, 255, 0.3)'
+                },
+                legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+            },
+        }
+    });
+
+    // 2. Balance Chart (Bar)
+    const ctxBal = document.getElementById('balanceChart').getContext('2d');
+    new Chart(ctxBal, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(balanceData),
+            datasets: [{
+                label: 'Average Balance ($)',
+                data: Object.values(balanceData),
+                backgroundColor: ['rgba(255, 0, 60, 0.6)', 'rgba(10, 255, 96, 0.6)'],
+                borderColor: ['#ff003c', '#0aff60'],
+                borderWidth: 1,
+                borderRadius: 2,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    grid: { color: 'rgba(255,255,255,0.03)' },
+                    ticks: { color: '#8b9bb4' }
+                },
+                x: { grid: { display: false }, ticks: { color: '#ffffff', font: { weight: 'bold' } } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // 3. Age Distribution (Line)
+    function createHistogram(data, binSize=5, maxAge=90) {
+        const bins = {};
+        for (let i = 18; i <= maxAge; i += binSize) {
+            bins[i] = 0;
+        }
+        data.forEach(age => {
+            for (let b in bins) {
+                if (age >= parseInt(b) && age < parseInt(b) + binSize) {
+                    bins[b]++;
+                    break;
+                }
+            }
+        });
+        return bins;
+    }
+
+    const churnBins = createHistogram(ageChurn);
+    const stayBins = createHistogram(ageStay);
+    
+    const ctxAge = document.getElementById('ageChart').getContext('2d');
+    new Chart(ctxAge, {
+        type: 'line',
+        data: {
+            labels: Object.keys(churnBins).map(b => `${b}-${parseInt(b)+4}`),
+            datasets: [
+                {
+                    label: 'Churned',
+                    data: Object.values(churnBins),
+                    borderColor: '#ff003c',
+                    backgroundColor: 'rgba(255, 0, 60, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ff003c',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Retained',
+                    data: Object.values(stayBins),
+                    borderColor: '#0aff60',
+                    backgroundColor: 'rgba(10, 255, 96, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#0aff60',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    title: {display: true, text: 'Number of Customers', color: '#8b9bb4'},
+                    grid: { color: 'rgba(255,255,255,0.03)' }
+                },
+                x: { 
+                    title: {display: true, text: 'Age Group', color: '#8b9bb4'},
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { labels: { usePointStyle: true, padding: 20 } },
+                tooltip: {
+                    backgroundColor: 'rgba(5, 5, 8, 0.9)',
+                    titleColor: '#00f3ff',
+                    borderWidth: 1,
+                    borderColor: 'rgba(0, 243, 255, 0.3)'
+                }
+            }
+        }
+    });
+
 </script>
-
-</body>
-</html>
+{% endblock %}

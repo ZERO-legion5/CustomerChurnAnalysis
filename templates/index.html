@@ -1,180 +1,153 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChurnGuard | Predictor</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --dark: #212529;
-            --light: #f8f9fa;
-            --danger-soft: #fff5f5;
-            --success-soft: #f0fff4;
-        }
-        body { background: #f0f2f5; font-family: 'Inter', sans-serif; }
-        .sidebar { background: white; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.05); position: fixed; width: inherit; z-index: 100; }
-        .nav-link { color: #4a5568; padding: 1rem 1.5rem; border-radius: 10px; margin: 0.2rem 1rem; transition: all 0.3s; }
-        .nav-link:hover { background: #f7fafc; color: var(--primary); }
-        .nav-link.active { background: var(--primary); color: white; }
-        
-        .main-content { padding: 3rem; margin-left: 16.666667%; }
-        .app-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border: none; }
-        .hero-section { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 2rem; text-align: center; }
-        .form-label { font-weight: 600; font-size: 0.9rem; color: #4a5568; display: flex; align-items: center; }
-        .form-label i { margin-right: 8px; color: var(--primary); }
-        .input-info { display: block; font-size: 0.75rem; color: #718096; margin-top: 4px; }
-        .btn-predict { background: var(--primary); color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 700; width: 100%; transition: all 0.3s; }
-        .btn-predict:hover { background: var(--secondary); transform: translateY(-2px); }
-        
-        #result-area { display: none; animation: fadeIn 0.6s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .churn-badge { font-size: 1.25rem; padding: 0.75rem 1.5rem; border-radius: 12px; display: inline-block; margin-bottom: 1rem; font-weight: 700; }
-        .bg-churn { background-color: var(--danger-soft); color: #e53e3e; border: 1px solid #feb2b2; }
-        .bg-stay { background-color: var(--success-soft); color: #38a169; border: 1px solid #9ae6b4; }
-        .prob-bar-container { height: 10px; background: #edf2f7; border-radius: 5px; overflow: hidden; margin: 1rem 0; }
-        .prob-bar { height: 100%; transition: width 1s ease-in-out; }
+{% extends "base.html" %}
 
-        .shap-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
-        .shap-label { flex: 0 0 140px; text-align: right; padding-right: 12px; font-weight: 600; }
-        .shap-bar-container { flex: 1; height: 6px; background: #f7fafc; position: relative; border-radius: 3px; }
-        .shap-bar { height: 100%; border-radius: 3px; position: absolute; }
-        .shap-positive { background-color: #f56565; }
-        .shap-negative { background-color: #48bb78; }
-
-        .ai-strategy-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-top: 2rem; }
-        #strategy-content { white-space: pre-wrap; font-size: 0.9rem; font-style: italic; }
-    </style>
-</head>
-<body>
-
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 p-0 sidebar">
-            <div class="p-4 mb-4">
-                <h4 class="fw-bold text-primary"><i class="fas fa-shield-halved me-2"></i>ChurnGuard</h4>
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-user-check me-2"></i>Customer Churn Prediction</h6>
             </div>
-            <nav class="nav flex-column">
-                <a class="nav-link active" href="/"><i class="fas fa-brain me-2"></i> Predictor</a>
-                <a class="nav-link" href="/dashboard"><i class="fas fa-chart-pie me-2"></i> Dashboard</a>
-                <a class="nav-link" href="/personas"><i class="fas fa-users me-2"></i> Personas</a>
-                <a class="nav-link" href="/chat"><i class="fas fa-comments me-2"></i> AI Chat</a>
-            </nav>
-        </div>
-
-        <!-- Main Content -->
-        <div class="col-md-9 col-lg-10 main-content">
-            <div class="row justify-content-center">
-                <div class="col-xl-10">
-                    <div class="card app-card">
-                        <div class="hero-section">
-                            <h2 class="fw-bold">Customer Intelligence Center</h2>
-                            <p class="mb-0 opacity-75">Retention Simulator & AI Risk Profiler</p>
+            <div class="card-body">
+                <form id="predictForm">
+                    <div class="row g-3">
+                        <!-- Credit Score -->
+                        <div class="col-md-6">
+                            <label class="form-label">Credit Score</label>
+                            <input type="number" class="form-control" name="CreditScore" placeholder="e.g. 600" required min="300" max="850">
                         </div>
-                        <div class="card-body p-4 p-lg-5">
-                            <form id="predictionForm">
-                                <div class="row g-4">
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-credit-card"></i> Credit Score</label>
-                                        <input type="number" id="CreditScore" class="form-control" value="600" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-globe"></i> Geography</label>
-                                        <select id="Geography" class="form-select">
-                                            <option value="France">France</option>
-                                            <option value="Germany">Germany</option>
-                                            <option value="Spain">Spain</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-venus-mars"></i> Gender</label>
-                                        <select id="Gender" class="form-select">
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-user-clock"></i> Age</label>
-                                        <input type="number" id="Age" class="form-control" value="40" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-calendar-alt"></i> Tenure</label>
-                                        <input type="number" id="Tenure" class="form-control" value="3" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-wallet"></i> Balance</label>
-                                        <input type="number" step="0.01" id="Balance" class="form-control" value="60000" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-box"></i> Number of Products</label>
-                                        <input type="number" id="NumOfProducts" class="form-control" value="1" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-id-card"></i> Credit Card Status</label>
-                                        <select id="HasCrCard" class="form-select">
-                                            <option value="1">Has Credit Card</option>
-                                            <option value="0">No Credit Card</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-user-check"></i> Member Activity</label>
-                                        <select id="IsActiveMember" class="form-select">
-                                            <option value="1">Active Member</option>
-                                            <option value="0" selected>Inactive Member</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Estimated Salary</label>
-                                        <input type="number" step="0.01" id="EstimatedSalary" class="form-control" value="50000" required>
-                                    </div>
-                                </div>
-                                <button type="submit" id="predictBtn" class="btn-predict mt-5">
-                                    <span class="btn-text">Analyze Risk Profile</span>
-                                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                                </button>
-                            </form>
+                        
+                        <!-- Geography -->
+                        <div class="col-md-6">
+                            <label class="form-label">Geography</label>
+                            <select class="form-select" name="Geography" required>
+                                <option value="France">France</option>
+                                <option value="Germany">Germany</option>
+                                <option value="Spain">Spain</option>
+                            </select>
+                        </div>
 
-                            <div id="result-area" class="mt-5">
-                                <hr class="mb-5">
-                                <div class="row">
-                                    <div class="col-lg-5 text-center border-end">
-                                        <h5 class="fw-bold mb-3">AI Prediction</h5>
-                                        <div id="churnBadge"></div>
-                                        <p id="confidenceText" class="text-muted mb-1"></p>
-                                        <div class="prob-bar-container mx-auto" style="max-width: 250px;">
-                                            <div id="probBar" class="prob-bar"></div>
-                                        </div>
-                                        
-                                        <div class="d-grid gap-2 mt-4 mx-auto" style="max-width: 250px;">
-                                            <button id="genAiBtn" class="btn btn-dark rounded-pill">
-                                                <i class="fas fa-robot me-2"></i>Generate Retention Plan
-                                            </button>
-                                            <button id="downloadBtn" class="btn btn-outline-primary rounded-pill btn-sm">
-                                                <i class="fas fa-file-pdf me-2"></i>Download PDF Report
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-7 ps-lg-5">
-                                        <h5 class="fw-bold mb-4"><i class="fas fa-magnifying-glass-chart me-2"></i>Risk Drivers (SHAP)</h5>
-                                        <div id="shapBars"></div>
-                                        
-                                        <div id="ai-strategy-area" style="display: none;">
-                                            <div class="ai-strategy-box">
-                                                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-wand-magic-sparkles me-2"></i>Local AI Retention Strategy (Ollama)</h6>
-                                                <div id="strategy-content"></div>
-                                                <div class="text-end mt-3">
-                                                    <button id="saveBtn" class="btn btn-success btn-sm"><i class="fas fa-save me-2"></i>Save to Database</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- Gender -->
+                        <div class="col-md-6">
+                            <label class="form-label">Gender</label>
+                            <select class="form-select" name="Gender" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+
+                        <!-- Age -->
+                        <div class="col-md-6">
+                            <label class="form-label">Age</label>
+                            <input type="number" class="form-control" name="Age" placeholder="e.g. 40" required min="18" max="100">
+                        </div>
+
+                        <!-- Tenure -->
+                        <div class="col-md-6">
+                            <label class="form-label">Tenure (Years)</label>
+                            <input type="number" class="form-control" name="Tenure" placeholder="0-10" required min="0" max="10">
+                        </div>
+
+                        <!-- Balance -->
+                        <div class="col-md-6">
+                            <label class="form-label">Balance ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="Balance" placeholder="0.00" required step="0.01">
                             </div>
                         </div>
+
+                        <!-- Num Of Products -->
+                        <div class="col-md-6">
+                            <label class="form-label">Number of Products</label>
+                            <select class="form-select" name="NumOfProducts" required>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+
+                        <!-- Estimated Salary -->
+                        <div class="col-md-6">
+                            <label class="form-label">Estimated Salary ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="EstimatedSalary" placeholder="50000.00" required step="0.01">
+                            </div>
+                        </div>
+
+                        <!-- Boolean Features -->
+                        <div class="col-md-6">
+                            <label class="form-label">Has Credit Card?</label>
+                            <select class="form-select" name="HasCrCard" required>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Is Active Member?</label>
+                            <select class="form-select" name="IsActiveMember" required>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg w-50" style="letter-spacing: 2px;">
+                            <i class="fas fa-search me-2"></i>Analyze Risk
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Section (Hidden by default) -->
+        <div id="resultSection" class="card shadow mb-4 d-none fade-in">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Analysis Result</h6>
+                <span id="riskBadge" class="badge bg-secondary fs-6">Status Unknown</span>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6 text-center mb-3 mb-md-0">
+                        <h2 id="predictionText" class="fw-bold mb-1" style="font-size: 3rem;">--</h2>
+                        <p class="text-muted mb-0">Prediction</p>
+                        <div class="mt-4">
+                            <div class="progress" style="height: 30px;">
+                                <div id="confidenceBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">Model Confidence: <span id="confidenceText" class="text-white">0%</span></small>
+                        </div>
+                    </div>
+                    <div class="col-md-6 border-start border-secondary ps-md-4">
+                        <h6 class="fw-bold border-bottom pb-2 mb-3" style="color: var(--text-muted);">Top Influencing Factors (SHAP)</h6>
+                        <ul id="shapList" class="list-group list-group-flush small" style="background: transparent;">
+                            <!-- JS will populate -->
+                        </ul>
+                    </div>
+                </div>
+
+                <hr class="my-4" style="border-color: rgba(255,255,255,0.1);">
+
+                <!-- Strategy & Actions -->
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <div id="strategyBox" class="alert alert-info d-none bg-transparent border-info text-info">
+                            <h6 class="alert-heading fw-bold"><i class="fas fa-lightbulb me-2"></i>AI Retention Strategy</h6>
+                            <p id="strategyText" class="mb-0 small" style="color: #e0f7fa;"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <button id="btnStrategy" class="btn btn-outline-primary w-100 py-2">
+                            <i class="fas fa-magic me-2"></i>Generate AI Strategy
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button id="btnReport" class="btn btn-outline-dark w-100 py-2">
+                            <i class="fas fa-file-pdf me-2"></i>Download Full Report
+                        </button>
                     </div>
                 </div>
             </div>
@@ -182,138 +155,202 @@
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div class="spinner-overlay" id="loader">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3 fw-bold" style="color: var(--primary-color); letter-spacing: 2px;">PROCESSING DATA...</p>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
 <script>
-    let lastResult = null;
+    let currentResult = null;
 
-    document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+    // Populate random default values on load
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('predictForm');
+        const geographies = ['France', 'Germany', 'Spain'];
+        const genders = ['Male', 'Female'];
+        
+        form.elements['CreditScore'].value = Math.floor(Math.random() * (850 - 400 + 1)) + 400;
+        form.elements['Geography'].value = geographies[Math.floor(Math.random() * geographies.length)];
+        form.elements['Gender'].value = genders[Math.floor(Math.random() * genders.length)];
+        form.elements['Age'].value = Math.floor(Math.random() * (65 - 18 + 1)) + 18;
+        form.elements['Tenure'].value = Math.floor(Math.random() * 11);
+        form.elements['Balance'].value = (Math.random() * 150000).toFixed(2);
+        form.elements['NumOfProducts'].value = Math.floor(Math.random() * 3) + 1;
+        form.elements['EstimatedSalary'].value = (Math.random() * (180000 - 30000) + 30000).toFixed(2);
+        form.elements['HasCrCard'].value = Math.random() > 0.3 ? "1" : "0";
+        form.elements['IsActiveMember'].value = Math.random() > 0.5 ? "1" : "0";
+    });
+
+    document.getElementById('predictForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const btn = document.getElementById('predictBtn');
-        const spinner = btn.querySelector('.spinner-border');
-        const resultArea = document.getElementById('result-area');
-        document.getElementById('ai-strategy-area').style.display = 'none';
+        const loader = document.getElementById('loader');
+        
+        // Correct way to show flex loader
+        loader.classList.add('show');
 
-        btn.disabled = true;
-        spinner.style.display = 'inline-block';
-
-        const data = {
-            CreditScore: document.getElementById('CreditScore').value,
-            Geography: document.getElementById('Geography').value,
-            Gender: document.getElementById('Gender').value,
-            Age: document.getElementById('Age').value,
-            Tenure: document.getElementById('Tenure').value,
-            Balance: document.getElementById('Balance').value,
-            NumOfProducts: document.getElementById('NumOfProducts').value,
-            HasCrCard: document.getElementById('HasCrCard').value,
-            IsActiveMember: document.getElementById('IsActiveMember').value,
-            EstimatedSalary: document.getElementById('EstimatedSalary').value
-        };
+        // Gather Data
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
 
         try {
             const response = await fetch('/predict', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
-            lastResult = await response.json();
-            
-            if(lastResult.success) {
-                const isChurn = lastResult.result === 'Churn';
-                const badge = document.getElementById('churnBadge');
-                badge.className = `churn-badge ${isChurn ? 'bg-churn' : 'bg-stay'}`;
-                badge.innerText = lastResult.result.toUpperCase();
-                
-                document.getElementById('confidenceText').innerText = `Confidence: ${lastResult.confidence}%`;
-                const bar = document.getElementById('probBar');
-                bar.className = `prob-bar ${isChurn ? 'bg-danger' : 'bg-success'}`;
-                bar.style.width = `${lastResult.confidence}%`;
+            const result = await response.json();
 
-                const shapContainer = document.getElementById('shapBars');
-                shapContainer.innerHTML = '';
-                const maxInf = Math.max(...lastResult.explanations.map(e => Math.abs(e.influence)));
-
-                lastResult.explanations.slice(0, 6).forEach(exp => {
-                    const width = (Math.abs(exp.influence) / maxInf) * 100;
-                    shapContainer.innerHTML += `
-                        <div class="shap-row">
-                            <div class="shap-label text-truncate">${exp.feature}</div>
-                            <div class="shap-bar-container">
-                                <div class="shap-bar ${exp.type === 'positive' ? 'shap-positive' : 'shap-negative'}" style="width: ${width}%"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                resultArea.style.display = 'block';
-                resultArea.scrollIntoView({ behavior: 'smooth' });
+            if (result.success) {
+                currentResult = { ...result, customer_data: data };
+                displayResult(result);
+            } else {
+                alert('Error: ' + result.error);
             }
-        } catch (err) { alert('Analysis failed'); }
-        finally {
-            btn.disabled = false;
-            spinner.style.display = 'none';
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An unexpected error occurred.');
+        } finally {
+            loader.classList.remove('show');
         }
     });
 
-    document.getElementById('genAiBtn').addEventListener('click', async function() {
-        const btn = this;
-        const strategyArea = document.getElementById('ai-strategy-area');
-        const content = document.getElementById('strategy-content');
+    function displayResult(data) {
+        const resultSection = document.getElementById('resultSection');
+        resultSection.classList.remove('d-none');
         
+        // Update Prediction Text
+        const predText = document.getElementById('predictionText');
+        const riskBadge = document.getElementById('riskBadge');
+        const bar = document.getElementById('confidenceBar');
+        const confText = document.getElementById('confidenceText');
+
+        predText.textContent = data.result;
+        confText.textContent = data.confidence + '%';
+        bar.style.width = data.confidence + '%';
+
+        if (data.result === 'Churn') {
+            predText.classList.remove('text-success');
+            predText.style.color = 'var(--danger-color)';
+            predText.style.textShadow = 'var(--glow-danger)';
+            
+            riskBadge.className = 'badge bg-danger fs-6';
+            riskBadge.textContent = 'High Risk';
+            
+            bar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
+        } else {
+            predText.style.color = 'var(--success-color)';
+            predText.style.textShadow = 'var(--glow-success)';
+            
+            riskBadge.className = 'badge bg-success fs-6';
+            riskBadge.textContent = 'Low Risk';
+            
+            bar.className = 'progress-bar bg-success progress-bar-striped progress-bar-animated';
+        }
+
+        // Update SHAP List
+        const list = document.getElementById('shapList');
+        list.innerHTML = '';
+        data.explanations.slice(0, 5).forEach(exp => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent text-white border-bottom border-secondary';
+            const colorClass = exp.type === 'positive' ? 'text-danger' : 'text-success';
+            const icon = exp.type === 'positive' ? 'fa-arrow-up' : 'fa-arrow-down';
+            
+            li.innerHTML = `
+                <span>${exp.feature}</span>
+                <span class="${colorClass} fw-bold">
+                    <i class="fas ${icon} me-1 small"></i>${Math.abs(exp.influence).toFixed(4)}
+                </span>
+            `;
+            list.appendChild(li);
+        });
+
+        // Reset Strategy Box
+        document.getElementById('strategyBox').classList.add('d-none');
+        document.getElementById('btnStrategy').disabled = false;
+        
+        // Scroll to result
+        resultSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('btnStrategy').addEventListener('click', async () => {
+        if (!currentResult) return;
+        const btn = document.getElementById('btnStrategy');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>AI is thinking...';
-        
+
         try {
             const response = await fetch('/generate_strategy', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(lastResult)
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(currentResult)
             });
-            const result = await response.json();
-            if(result.success) {
-                lastResult.strategy = result.strategy;
-                content.innerText = result.strategy;
-                strategyArea.style.display = 'block';
+            const data = await response.json();
+            
+            if (data.success) {
+                const box = document.getElementById('strategyBox');
+                box.classList.remove('d-none');
+                document.getElementById('strategyText').innerText = data.strategy;
+                
+                // Add strategy to currentResult for reporting
+                currentResult.strategy = data.strategy;
+
+                // Save to DB
+                await fetch('/save_strategy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        customer_data: currentResult.customer_data,
+                        prediction: currentResult.result,
+                        strategy: data.strategy
+                    })
+                });
             } else {
-                alert('Ollama Error: Ensure Ollama is running and llama3.2:3b is pulled.');
+                alert('Failed to generate strategy: ' + data.error);
             }
-        } catch (err) { alert('AI Request failed'); }
-        finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-robot me-2"></i>Generate Retention Plan';
+        } catch (e) {
+            console.error(e);
+        } finally {
+            btn.innerHTML = originalText;
         }
     });
 
-    document.getElementById('saveBtn').addEventListener('click', async function() {
-        if(!lastResult || !lastResult.strategy) return;
+    document.getElementById('btnReport').addEventListener('click', async () => {
+        if (!currentResult) return;
+        const btn = document.getElementById('btnReport');
+        btn.disabled = true;
         
-        const response = await fetch('/save_strategy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                customer_data: lastResult,
-                prediction: lastResult.result,
-                strategy: lastResult.strategy
-            })
-        });
-        const result = await response.json();
-        if(result.success) alert('Saved to Database!');
-    });
-
-    document.getElementById('downloadBtn').addEventListener('click', async function() {
-        if(!lastResult) return;
-        const response = await fetch('/generate_report', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(lastResult)
-        });
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "Customer_Intelligence_Report.pdf";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        try {
+            const response = await fetch('/generate_report', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(currentResult)
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Retention_Report.pdf";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Failed to generate report");
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+        }
     });
 </script>
-</body>
-</html>
+{% endblock %}

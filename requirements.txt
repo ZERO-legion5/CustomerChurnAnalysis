@@ -1,0 +1,16 @@
+pandas
+numpy
+matplotlib
+seaborn
+tensorflow
+scikit-learn
+xgboost
+lightgbm
+catboost
+flask
+joblib
+imbalanced-learn
+shap
+reportlab
+google-genai
+python-dotenv

@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .gauge-container {
+        position: relative;
+        width: 100%;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 0;
+    }
+    .gauge-value {
+        font-size: 4rem;
+        font-weight: 800;
+        font-family: 'Rajdhani';
+        transition: all 0.3s ease;
+    }
+    .slider-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+    .slider-val {
+        color: var(--primary-color);
+        font-weight: 700;
+    }
+    input[type=range] {
+        width: 100%;
+        background: transparent;
+        -webkit-appearance: none;
+    }
+    input[type=range]:focus {
+        outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -7px;
+        box-shadow: 0 0 10px var(--primary-color);
+    }
+    .suggestion-card {
+        background: rgba(10, 255, 96, 0.05);
+        border-left: 4px solid var(--success-color);
+        padding: 15px;
+        margin-top: 20px;
+    }
+    .dropdown-menu {
+        z-index: 2000 !important;
+        border: 1px solid var(--primary-color) !important;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.4) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary" style="position: relative; z-index: 1050;">
+            <h2 class="h3 mb-0 text-primary"><i class="fas fa-flask me-2"></i>Retention Lab: What-If Simulator</h2>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Load Preset Profile
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><a class="dropdown-item preset-load" data-profile="avg" href="#">Average Customer</a></li>
+                    <li><a class="dropdown-item preset-load" data-profile="high_risk" href="#">High Risk (Young/Germany)</a></li>
+                    <li><a class="dropdown-item preset-load" data-profile="loyal" href="#">Loyal Long-term</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Simulation Controls</h6>
+            </div>
+            <div class="card-body">
+                <form id="simulatorForm">
+                    <div class="row g-4">
+                        <!-- Demographics -->
+                        <div class="col-md-6">
+                            <div class="slider-label">
+                                <label class="form-label">Age</label>
+                                <span class="slider-val" id="val-Age">40</span>
+                            </div>
+                            <input type="range" name="Age" min="18" max="92" value="40" class="sim-input">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Geography</label>
+                            <select name="Geography" class="form-select sim-input">
+                                <option value="France">France</option>
+                                <option value="Germany">Germany</option>
+                                <option value="Spain">Spain</option>
+                            </select>
+                        </div>
+
+                        <!-- Financials -->
+                        <div class="col-md-6">
+                            <div class="slider-label">
+                                <label class="form-label">Balance ($)</label>
+                                <span class="slider-val" id="val-Balance">50000</span>
+                            </div>
+                            <input type="range" name="Balance" min="0" max="250000" step="1000" value="50000" class="sim-input">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="slider-label">
+                                <label class="form-label">Credit Score</label>
+                                <span class="slider-val" id="val-CreditScore">650</span>
+                            </div>
+                            <input type="range" name="CreditScore" min="350" max="850" value="650" class="sim-input">
+                        </div>
+
+                        <!-- Relationship -->
+                        <div class="col-md-6">
+                            <div class="slider-label">
+                                <label class="form-label">Tenure (Years)</label>
+                                <span class="slider-val" id="val-Tenure">5</span>
+                            </div>
+                            <input type="range" name="Tenure" min="0" max="10" value="5" class="sim-input">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Products</label>
+                            <select name="NumOfProducts" class="form-select sim-input">
+                                <option value="1">1 Product</option>
+                                <option value="2">2 Products</option>
+                                <option value="3">3 Products</option>
+                                <option value="4">4 Products</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Activity Status</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input sim-input" type="checkbox" name="IsActiveMember" value="1" checked>
+                                <label class="form-check-label text-muted">Is Active Member</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Credit Card</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input sim-input" type="checkbox" name="HasCrCard" value="1" checked>
+                                <label class="form-check-label text-muted">Has Credit Card</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden fixed gender for simplicity in simulator or add it -->
+                        <input type="hidden" name="Gender" value="Male">
+                        <input type="hidden" name="EstimatedSalary" value="75000">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow h-100 mb-4 sticky-top">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Live Risk Score</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="gauge-container">
+                    <div id="riskGauge" class="gauge-value">--%</div>
+                    <div class="text-muted small text-uppercase" style="letter-spacing: 2px;">Churn Probability</div>
+                </div>
+                
+                <div id="riskStatus" class="badge p-3 w-100 fs-5 mb-3">CALCULATING...</div>
+                
+                <div class="mb-4 p-2 border border-secondary" style="background: rgba(188, 19, 254, 0.05);">
+                    <div class="small text-muted text-uppercase mb-1" style="font-size: 0.7rem;">Persona Match</div>
+                    <div id="personaMatch" class="fw-bold text-white">--</div>
+                </div>
+                
+                <div class="text-start border-top border-secondary pt-3 mt-2">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>Optimization Insight</h6>
+                    <div id="optimizationText" class="small text-muted">
+                        Adjust sliders to see real-time impact on customer retention.
+                    </div>
+                </div>
+
+                <div class="suggestion-card d-none" id="suggestionBox">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-success fa-2x me-3"></i>
+                        <div class="text-start">
+                            <div class="fw-bold text-success">Winning Action</div>
+                            <div id="winningAction" class="small text-white">Engage customer to become an active member.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const simulatorForm = document.getElementById('simulatorForm');
+    const simInputs = document.querySelectorAll('.sim-input');
+    const presets = {
+        avg: { Age: 40, Geography: 'France', Balance: 50000, CreditScore: 650, Tenure: 5, NumOfProducts: 1, IsActiveMember: true, HasCrCard: true },
+        high_risk: { Age: 50, Geography: 'Germany', Balance: 120000, CreditScore: 580, Tenure: 2, NumOfProducts: 3, IsActiveMember: false, HasCrCard: true },
+        loyal: { Age: 35, Geography: 'Spain', Balance: 10000, CreditScore: 750, Tenure: 8, NumOfProducts: 2, IsActiveMember: true, HasCrCard: true }
+    };
+
+    // Update value labels
+    simInputs.forEach(input => {
+        input.addEventListener('input', () => {
+            const valSpan = document.getElementById(`val-${input.name}`);
+            if (valSpan) valSpan.textContent = input.value;
+            debouncePredict();
+        });
+    });
+
+    // Preset loading
+    document.querySelectorAll('.preset-load').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const profile = presets[e.target.dataset.profile];
+            for (let key in profile) {
+                const el = simulatorForm.elements[key];
+                if (el.type === 'checkbox') {
+                    el.checked = profile[key];
+                } else {
+                    el.value = profile[key];
+                }
+                const valSpan = document.getElementById(`val-${key}`);
+                if (valSpan) valSpan.textContent = el.value;
+            }
+            updatePrediction();
+        });
+    });
+
+    let timeout = null;
+    function debouncePredict() {
+        clearTimeout(timeout);
+        timeout = setTimeout(updatePrediction, 300);
+    }
+
+    async function updatePrediction() {
+        const formData = new FormData(simulatorForm);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Handle checkboxes
+        data.IsActiveMember = simulatorForm.elements.IsActiveMember.checked ? "1" : "0";
+        data.HasCrCard = simulatorForm.elements.HasCrCard.checked ? "1" : "0";
+        
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                updateUI(result);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    const personaNames = {
+        0: "High Balance Conservative",
+        1: "Young Modern Saver",
+        2: "Stable Mid-Age Client",
+        3: "Emerging Credit Profile"
+    };
+
+    let currentProb = 0;
+    let animationFrame = null;
+
+    function animateNumber(target) {
+        const gauge = document.getElementById('riskGauge');
+        const duration = 800;
+        const start = currentProb;
+        const startTime = performance.now();
+
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function
+            const easeOutQuad = t => t * (2 - t);
+            const val = start + (target - start) * easeOutQuad(progress);
+            
+            gauge.textContent = val.toFixed(1) + '%';
+            
+            if (progress < 1) {
+                animationFrame = requestAnimationFrame(update);
+            } else {
+                currentProb = target;
+            }
+        }
+        animationFrame = requestAnimationFrame(update);
+    }
+
+    function updateUI(data) {
+        const gauge = document.getElementById('riskGauge');
+        const status = document.getElementById('riskStatus');
+        const personaMatch = document.getElementById('personaMatch');
+        const prob = data.result === 'Churn' ? data.confidence : (100 - data.confidence);
+        
+        animateNumber(prob);
+        personaMatch.textContent = personaNames[data.cluster_id] || `Cluster ${data.cluster_id}`;
+        
+        if (prob > 70) {
+            gauge.style.color = '#ff003c';
+            gauge.style.textShadow = '0 0 20px #ff003c, 0 0 40px rgba(255, 0, 60, 0.5)';
+            status.className = 'badge bg-danger p-3 w-100 fs-5 mb-4';
+            status.textContent = 'CRITICAL RISK';
+        } else if (prob > 40) {
+            gauge.style.color = '#ffe600';
+            gauge.style.textShadow = '0 0 20px #ffe600, 0 0 40px rgba(255, 230, 0, 0.5)';
+            status.className = 'badge bg-warning p-3 w-100 fs-5 mb-4 text-dark';
+            status.textContent = 'MONITOR CLOSELY';
+        } else {
+            gauge.style.color = '#0aff60';
+            gauge.style.textShadow = '0 0 20px #0aff60, 0 0 40px rgba(10, 255, 96, 0.5)';
+            status.className = 'badge bg-success p-3 w-100 fs-5 mb-4';
+            status.textContent = 'STABLE CUSTOMER';
+        }
+
+        // Optimization logic (Find most negative SHAP factor)
+        const bestAction = data.explanations.find(e => e.type === 'negative');
+        const worstAction = data.explanations.find(e => e.type === 'positive');
+        
+        const optText = document.getElementById('optimizationText');
+        const suggestionBox = document.getElementById('suggestionBox');
+        const winningAction = document.getElementById('winningAction');
+
+        if (worstAction) {
+            optText.innerHTML = `The model identifies <strong>${worstAction.feature}</strong> as the primary churn driver for this profile.`;
+            
+            // Suggest counter-action
+            suggestionBox.classList.remove('d-none');
+            if (worstAction.feature === 'Is Active Member') {
+                winningAction.textContent = "Improve engagement to convert into an Active Member.";
+            } else if (worstAction.feature === 'Number of Products') {
+                winningAction.textContent = "Cross-sell or simplify product portfolio.";
+            } else if (worstAction.feature === 'Balance') {
+                winningAction.textContent = "Offer high-yield savings to increase balance.";
+            } else {
+                winningAction.textContent = `Focus on mitigating the impact of ${worstAction.feature}.`;
+            }
+        }
+    }
+
+    // Initial run
+    updatePrediction();
+</script>
+{% endblock %}

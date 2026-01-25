@@ -1,0 +1,369 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Nunito:wght@300;400;600&display=swap');
+
+:root {
+    /* Neon Palette - High Saturation */
+    --primary-color: #00f3ff;     /* Electric Cyan */
+    --secondary-color: #bc13fe;   /* Electric Purple */
+    --success-color: #0aff60;     /* Matrix Green */
+    --warning-color: #ffe600;     /* Cyber Yellow */
+    --danger-color: #ff003c;      /* Cyber Red */
+    
+    /* Backgrounds */
+    --bg-dark: #050508;           /* Almost Black */
+    --bg-panel: #0d0e15;          /* Dark Grey Blue */
+    --input-bg: #14141e;
+    
+    /* Text */
+    --text-main: #ffffff;
+    --text-muted: #8b9bb4;
+    
+    /* Glows */
+    --glow-primary: 0 0 15px rgba(0, 243, 255, 0.4);
+    --glow-secondary: 0 0 15px rgba(188, 19, 254, 0.4);
+    --glow-success: 0 0 15px rgba(10, 255, 96, 0.4);
+    --glow-danger: 0 0 15px rgba(255, 0, 60, 0.4);
+    --glow-text: 0 0 10px rgba(255, 255, 255, 0.3);
+    
+    /* Borders */
+    --border-neon: 1px solid rgba(0, 243, 255, 0.3);
+    --border-subtle: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    /* Cyberpunk Grid Background */
+    background-image: 
+        linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center top;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Typography Overrides */
+h1, h2, h3, h4, h5, h6, .navbar-brand, .btn, .nav-link, .badge {
+    font-family: 'Rajdhani', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Navbar */
+.navbar {
+    background: rgba(5, 5, 8, 0.9) !important;
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--primary-color) !important;
+    text-shadow: var(--glow-primary);
+    font-size: 1.8rem;
+}
+
+.nav-link {
+    font-weight: 600;
+    color: var(--text-muted) !important;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--text-main) !important;
+    text-shadow: 0 0 8px var(--primary-color);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background: var(--primary-color);
+    box-shadow: var(--glow-primary);
+}
+
+/* Cyber Cards */
+.card {
+    background: var(--bg-panel);
+    border: var(--border-subtle);
+    border-radius: 0; /* Boxy tech look */
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Neon border effect on cards */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    opacity: 0.5;
+}
+
+.card:hover {
+    border-color: rgba(0, 243, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+}
+
+.card-header {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: var(--border-subtle);
+    padding: 1.25rem;
+}
+
+.card-header h6 {
+    color: var(--primary-color) !important;
+    text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+    font-weight: 700;
+}
+
+/* Forms & Inputs */
+.form-label {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-shadow: 0 0 2px rgba(0, 243, 255, 0.3);
+}
+
+.form-control, .form-select, .input-group-text {
+    background-color: var(--input-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 0; /* Boxy */
+    font-family: 'Nunito', sans-serif;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--input-bg);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2), inset 0 0 5px rgba(0, 243, 255, 0.1);
+    color: #fff;
+}
+
+.input-group-text {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--primary-color);
+}
+
+/* Neon Buttons */
+.btn {
+    border-radius: 0; /* Boxy */
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    font-weight: 700;
+    text-transform: uppercase;
+    z-index: 1;
+}
+
+.btn-primary {
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(0, 243, 255, 0.2);
+}
+
+.btn-primary:hover {
+    background: var(--primary-color);
+    color: #000;
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-dark {
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+}
+
+.btn-outline-dark:hover {
+    background: var(--text-muted);
+    color: #000;
+    box-shadow: 0 0 15px rgba(139, 155, 180, 0.5);
+}
+
+/* Progress & Badges */
+.progress {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 0;
+    height: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bg-danger {
+    background-color: var(--danger-color) !important;
+    box-shadow: var(--glow-danger);
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+    box-shadow: var(--glow-success);
+}
+
+.badge {
+    border-radius: 0;
+    padding: 0.6em 0.8em;
+    font-size: 0.9em;
+}
+.bg-secondary {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+}
+
+/* Loader - Fixed Layout */
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 5, 8, 0.95);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    backdrop-filter: blur(5px);
+}
+
+.spinner-overlay.show {
+    display: flex;
+}
+
+.spinner-border {
+    width: 4rem;
+    height: 4rem;
+    border-width: 0.25em;
+    color: var(--primary-color);
+    filter: drop-shadow(0 0 10px var(--primary-color));
+}
+
+/* Chat Interface - Redesigned */
+.chat-container {
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+    background: rgba(13, 14, 21, 0.6);
+    border: 1px solid rgba(0, 243, 255, 0.1);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+    position: relative;
+    border-radius: 4px;
+}
+
+.chat-box {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.chat-input-area {
+    padding: 1.5rem;
+    background: rgba(5, 5, 8, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 10px;
+}
+
+.message {
+    max-width: 80%;
+    padding: 1rem 1.25rem;
+    position: relative;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Bot Message Style */
+.message.bot {
+    align-self: flex-start;
+    background: rgba(20, 20, 30, 0.8);
+    border-left: 3px solid var(--secondary-color);
+    color: #d1d5db;
+    border-radius: 0 12px 12px 12px;
+}
+
+.message.bot::before {
+    content: 'AI SYSTEM';
+    position: absolute;
+    top: -18px;
+    left: 0;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.7rem;
+    color: var(--secondary-color);
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* User Message Style */
+.message.user {
+    align-self: flex-end;
+    background: rgba(0, 243, 255, 0.1);
+    border-right: 3px solid var(--primary-color);
+    color: #fff;
+    border-radius: 12px 0 12px 12px;
+    text-shadow: 0 0 2px rgba(0, 243, 255, 0.2);
+}
+
+.message.user::before {
+    content: 'YOU';
+    position: absolute;
+    top: -18px;
+    right: 0;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* Dashboard Specifics */
+.chart-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+}
+
+.text-main { color: var(--text-main) !important; }
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-dark); 
+}
+::-webkit-scrollbar-thumb {
+    background: #333; 
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color); 
+}
+
+/* Footer */
+footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--bg-panel);
+    color: var(--text-muted);
+    margin-top: auto;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

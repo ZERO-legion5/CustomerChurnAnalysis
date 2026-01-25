@@ -150,6 +150,10 @@ def personas():
 
     return render_template('personas.html', persona_data=persona_data, plot_data=plot_data)
 
+@app.route('/lab')
+def lab():
+    return render_template('lab.html')
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -179,15 +183,21 @@ def predict():
         vals = shap_values[0].flatten().tolist() if isinstance(shap_values, list) else shap_values.flatten().tolist()
             
         explanations = sorted([
-            {'feature': name, 'influence': round(val, 4), 'type': 'positive' if val > 0 else 'negative'}
+            {'feature': name, 'influence': round(float(val), 4), 'type': 'positive' if val > 0 else 'negative'}
             for name, val in zip(feature_names, vals)
-        ], key=lambda x: abs(x['influence']), reverse=True)
+        ], key=lambda x: abs(float(x['influence'])), reverse=True)
+
+        # Persona / Cluster match
+        cluster_features = [float(data['Age']), float(data['Balance']), float(data['CreditScore']), float(data['EstimatedSalary'])]
+        cluster_scaled = cluster_scaler.transform(np.array([cluster_features]))
+        cluster_id = int(kmeans.predict(cluster_scaled)[0])
 
         return jsonify({
             'success': True,
             'result': result,
             'confidence': confidence,
-            'explanations': explanations
+            'explanations': explanations,
+            'cluster_id': cluster_id
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})

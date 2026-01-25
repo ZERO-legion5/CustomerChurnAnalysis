@@ -1,106 +1,116 @@
 # Agent Guidelines: Customer Churn Analysis
 
-This document provides essential information for autonomous agents working on this repository. Adhere to these guidelines to maintain consistency and quality.
+This document provides essential information for autonomous agents working on the Customer Churn Analysis repository. Adhere to these guidelines to maintain consistency, quality, and project integrity.
 
 ## 1. Project Overview
-This is a Customer Intelligence & Retention Platform that uses machine learning to predict bank customer churn. It includes a data analysis notebook, a model training pipeline, and a Flask-based web application.
+ChurnGuard is an AI-powered Customer Intelligence & Retention Platform. It predicts bank customer churn using an Artificial Neural Network (ANN), provides explainable AI (XAI) via SHAP, and generates personalized retention strategies using Google Gemini.
 
-## 2. Environment & Commands
+## 2. Setup & Environment
 
-### Setup
-- Install dependencies: `pip install pandas numpy matplotlib seaborn tensorflow scikit-learn xgboost lightgbm catboost flask joblib imbalanced-learn shap reportlab google-genai`
-- Ensure `GEMINI_API_KEY` is set in your environment.
+### Dependencies
+- Install via pip: `pandas`, `numpy`, `matplotlib`, `seaborn`, `tensorflow`, `scikit-learn`, `xgboost`, `lightgbm`, `catboost`, `flask`, `joblib`, `imbalanced-learn`, `shap`, `reportlab`, `google-genai`, `python-dotenv`.
+- **API Key**: Ensure `GEMINI_API_KEY` is available in your environment or a `.env` file.
 
 ### Execution
-- **Run Web App**: `python app.py` (Starts Flask on http://127.0.0.1:5000)
-- **Train/Export Model**: `python export_model.py` (Generates `ann_model.h5` and `scaler.joblib`)
-- **Run Notebook**: Use `jupyter nbconvert --to notebook --execute main.ipynb` or open in a Jupyter environment.
+- **Run Web App**: `python app.py` (Flask starts on http://127.0.0.1:5000)
+- **Train/Export Model**: `python export_model.py` (Generates `ann_model.h5`, `scaler.joblib`, `cluster_model.joblib`, etc.)
+- **Execute Notebook**: `jupyter nbconvert --to notebook --execute main.ipynb`
 
-### Testing & Quality
-- **Linter**: `flake8 .` or `ruff check .`
-- **Tests**: Currently no tests are implemented. When adding them:
-  - Use **pytest**: `pytest`
-  - Single test: `pytest tests/test_file.py::test_function_name`
-- **Type Checking**: `mypy .`
+## 3. Development Workflow & Quality
 
-## 3. Code Style & Conventions
+### Build & Linting
+- **Linter**: Use `ruff check .` (preferred) or `flake8 .`.
+- **Type Checking**: Use `mypy .` to verify type hints.
+- **Formatting**: Adhere to PEP 8 standards.
+
+### Testing
+- **Framework**: Use `pytest`.
+- **Run All Tests**: `pytest`
+- **Run Single File**: `pytest tests/test_prediction.py`
+- **Run Single Test**: `pytest tests/test_prediction.py::test_model_output`
+- **Note**: If the `tests/` directory does not exist, create it before adding tests.
+
+## 4. Code Style & Conventions
 
 ### Python Guidelines
-- **Standard**: Follow PEP 8.
-- **Naming**: 
-  - Variables/Functions: `snake_case` (e.g., `calculate_risk`)
-  - Classes: `PascalCase` (e.g., `ChurnPredictor`)
-  - Constants: `UPPER_SNAKE_CASE` (e.g., `DEFAULT_THRESHOLD = 0.5`)
-- **Imports**:
-  1. Standard library (e.g., `import os`)
-  2. Third-party libraries (e.g., `import pandas as pd`)
-  3. Local modules (e.g., `from app import app`)
-- **Typing**: Use type hints for all function signatures.
+- **Naming Conventions**:
+  - Functions/Variables: `snake_case` (e.g., `get_prediction_score`)
+  - Classes: `PascalCase` (e.g., `RetentionReporter`)
+  - Constants: `UPPER_SNAKE_CASE` (e.g., `CHURN_THRESHOLD = 0.5`)
+- **Imports Order**:
+  1. Standard library (`os`, `io`, `sqlite3`)
+  2. Third-party packages (`pandas`, `tensorflow`, `flask`)
+  3. Local modules
+- **Typing**: Mandatory for all new functions. Use `from typing import List, Dict, Any, Optional`.
   ```python
-  def predict_churn(data: list[float]) -> float:
+  def process_features(raw_data: Dict[str, Any]) -> np.ndarray:
       ...
   ```
-- **Error Handling**: Use explicit `try...except` blocks. In Flask routes, always return JSON with a `success` flag.
+- **Error Handling**: Always use `try...except` blocks in routes and data pipelines. Flask responses must return a `success` boolean.
   ```python
   try:
-      # logic
       return jsonify({'success': True, 'data': result})
   except Exception as e:
+      app.logger.error(f"Prediction failed: {e}")
       return jsonify({'success': False, 'error': str(e)}), 500
   ```
 
 ### ML/Data Guidelines
-- **Reproducibility**: Always set a `random_state` (default: 0) when splitting data or initializing models.
-- **Preprocessing**: Ensure features are scaled using the same `scaler.joblib` used during training.
-- **Explainability**: Prioritize SHAP or similar libraries for model interpretation in future features.
+- **Reproducibility**: Set `random_state=0` for all stochastic operations (splits, SMOTE, K-Means).
+- **Feature Pipeline**:
+  - `Geography`: France=0, Germany=1, Spain=2.
+  - `Gender`: Female=0, Male=1.
+  - **Scaling**: Use `MinMaxScaler` via `scaler.joblib`.
+- **XAI**: Every prediction should include SHAP values to explain the "why" behind the result.
 
-### Web/Frontend Guidelines
-- **Frontend**: Use Bootstrap 5 for styling. Ensure responsive design.
-- **Interactions**: Prefer Asynchronous requests (Fetch API) over full page refreshes.
-- **Feedback**: Provide loading states (spinners) and clear success/error messages.
+### Web & Frontend Guidelines
+- **Styling**: Bootstrap 5 with a dark-themed custom CSS (`static/css/style.css`).
+- **JS Flow**: Use the `fetch` API for all backend communication. Never use full page refreshes for analysis.
+- **UI/UX**: Provide immediate visual feedback (spinners, disabled buttons) during asynchronous tasks.
 
-## 4. Directory Structure
-- `/`: Root directory containing main scripts and notebooks.
-- `/templates`: HTML templates for the Flask application.
-- `/static`: (Planned) For CSS, JavaScript, and Image assets.
-- `/models`: (Planned) To store versioned model files.
-
-## 5. Model Architecture Details
-The primary model is an Artificial Neural Network (ANN) with the following structure:
-- **Input Layer**: 10 features (after dropping RowNumber, CustomerId, Surname).
-- **Hidden Layer 1**: 32 units, ReLU activation.
-- **Hidden Layer 2**: 128 units, ReLU activation.
-- **Hidden Layer 3**: 64 units, ReLU activation.
-- **Hidden Layer 4**: 32 units, Tanh activation.
-- **Output Layer**: 1 unit, Sigmoid activation.
-- **Regularization**: Dropout (0.2) applied after layers 2 and 3.
+## 5. Directory Structure
+- `/`: Root for execution scripts (`app.py`, `export_model.py`) and data (`churn.csv`).
+- `/templates`: Jinja2 templates (`base.html`, `index.html`, etc.).
+- `/static`: Assets including `css/style.css`.
+- `/tests`: (Planned) Pytest suites.
+- `/catboost_info`: Metadata from training runs.
 
 ## 6. Implementation Specifications
 
-### Handling Categorical Data
-- **Geography**: Encoded as France=0, Germany=1, Spain=2.
-- **Gender**: Encoded as Female=0, Male=1.
-- Agents must ensure manual mapping in `app.py` matches the `LabelEncoder` used in `export_model.py`.
+### Database (SQLite)
+- **File**: `retention.db`
+- **Table**: `strategies`
+- **Schema**: `id`, `customer_data` (JSON text), `prediction`, `strategy` (AI text), `timestamp`.
 
-### Feature Scaling
-- All numerical inputs must be scaled using `MinMaxScaler`.
-- The `scaler.joblib` file is the source of truth for scaling parameters.
+### Gemini AI Integration
+- Use `google.genai` client.
+- **Models**: `gemini-2.0-flash` for chat/general queries, `gemini-1.5-flash` or higher for complex strategy generation.
+- **Prompts**: Maintain the professional, data-driven "ChurnGuard" persona.
 
-### Asynchronous Flow
-The frontend uses the `fetch` API to send JSON to `/predict`. Agents should:
-1. Prevent default form submission.
-2. Show a loading spinner on the button.
-3. Update the `result-area` dynamically without page refresh.
+### Model Architecture
+- **ANN**: 10 inputs -> 32 (ReLU) -> 128 (ReLU, Drop 0.2) -> 64 (ReLU, Drop 0.2) -> 32 (Tanh) -> 1 (Sigmoid).
+- **Clustering**: K-Means with 4 clusters for persona identification.
 
-## 7. Future Roadmap & Agent Tasks
-When assigned tasks, agents should look to:
-- **XAI**: Integrate SHAP to explain individual predictions.
-- **Analytics**: Create a dashboard with charts for churn distribution.
-- **Imbalance**: Implement SMOTE in the training pipeline to handle class imbalance.
-- **Persistence**: Add a database (SQLite/PostgreSQL) to store prediction history.
+## 7. Operational Protocols
+- **Sync Rule**: If you modify `export_model.py` or the preprocessing logic, you MUST run `python export_model.py` to update the joblib/h5 files used by `app.py`.
+- **Safe Editing**: Read the entire file before applying `edit` or `write`. Preserve existing indentation and template tags.
+- **Secret Safety**: Never hardcode API keys. Use `os.environ.get('GEMINI_API_KEY')`.
+- **Dependency Management**: If you add a new library, update this document and the `Setup` section in `README.md`.
+- **Communication**: Be concise in CLI; focus on task completion and verification status.
 
-## 8. Operational Protocols
-- **File Access**: Always read a file before editing it to ensure context.
-- **Changes**: Do not revert user changes or project conventions without explicit instruction.
-- **Communication**: Be concise in CLI interactions; focus on results.
-- **Verification**: After making changes to the model or preprocessing, always run `export_model.py` to ensure the app stays in sync with the training logic.
+## 8. Roadmap & Agent Tasks
+- **Persistence**: Migration from SQLite to a more robust storage if history grows.
+- **XAI Expansion**: Add global SHAP plots to the Dashboard.
+- **Persona Refining**: Improve the naming and logic of the 4 customer clusters.
+- **Testing**: Implement a full test suite in `tests/` covering model inference and Flask routes.
+- **CI/CD**: Add a GitHub Action to run `ruff` and `pytest` on every push.
+- **Performance**: Optimize SHAP calculation speed (currently use `nsamples=100`).
+
+## 9. Common Issues & Troubleshooting
+- **Missing Models**: If `ann_model.h5` is missing, run `export_model.py`.
+- **Gemini Errors**: Check API key quota and model availability (prefer `flash` models for speed).
+- **SQLite Locks**: Avoid long-running transactions to prevent `database is locked` errors in Flask.
+- **Scaling Mismatch**: Ensure `scaler.joblib` and `cluster_scaler.joblib` are used for their respective purposes.
+
+---
+*Last Updated: January 2026*
