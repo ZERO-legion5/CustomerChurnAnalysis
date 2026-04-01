@@ -1,22 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center fade-in">
+<!-- Page Banner -->
+<div class="page-banner fade-in mb-4">
+    <div class="page-banner-icon"><i class="fas fa-user-check"></i></div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title">Churn Predictor</div>
+        <p class="page-banner-sub">Enter customer attributes to predict churn probability using the trained ANN model</p>
+    </div>
+    <div class="d-none d-md-block">
+        <span class="badge px-3 py-2" style="background:rgba(56,189,248,0.1);color:var(--primary-color);border:1px solid rgba(56,189,248,0.2);font-size:0.8rem">
+            <i class="fas fa-brain me-1"></i>ANN + SHAP
+        </span>
+    </div>
+</div>
+
+<div class="row fade-in mb-4">
     <div class="col-lg-8">
+        <!-- Prediction Card -->
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold"><i class="fas fa-user-check me-2"></i>Customer Churn Prediction</h6>
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-sliders-h me-2" style="color:var(--primary-color)"></i>Customer Profile Input</h6>
+                <span class="badge" style="background:rgba(56,189,248,0.1);color:var(--primary-color);font-size:0.75rem;border:1px solid rgba(56,189,248,0.2)">ANN Model</span>
             </div>
             <div class="card-body">
                 <form id="predictForm">
                     <div class="row g-3">
-                        <!-- Credit Score -->
                         <div class="col-md-6">
                             <label class="form-label">Credit Score</label>
                             <input type="number" class="form-control" name="CreditScore" placeholder="e.g. 600" required min="300" max="850">
                         </div>
-                        
-                        <!-- Geography -->
                         <div class="col-md-6">
                             <label class="form-label">Geography</label>
                             <select class="form-select" name="Geography" required>
@@ -25,8 +38,6 @@
                                 <option value="Spain">Spain</option>
                             </select>
                         </div>
-
-                        <!-- Gender -->
                         <div class="col-md-6">
                             <label class="form-label">Gender</label>
                             <select class="form-select" name="Gender" required>
@@ -34,20 +45,14 @@
                                 <option value="Female">Female</option>
                             </select>
                         </div>
-
-                        <!-- Age -->
                         <div class="col-md-6">
                             <label class="form-label">Age</label>
                             <input type="number" class="form-control" name="Age" placeholder="e.g. 40" required min="18" max="100">
                         </div>
-
-                        <!-- Tenure -->
                         <div class="col-md-6">
                             <label class="form-label">Tenure (Years)</label>
                             <input type="number" class="form-control" name="Tenure" placeholder="0-10" required min="0" max="10">
                         </div>
-
-                        <!-- Balance -->
                         <div class="col-md-6">
                             <label class="form-label">Balance ($)</label>
                             <div class="input-group">
@@ -55,8 +60,6 @@
                                 <input type="number" class="form-control" name="Balance" placeholder="0.00" required step="0.01">
                             </div>
                         </div>
-
-                        <!-- Num Of Products -->
                         <div class="col-md-6">
                             <label class="form-label">Number of Products</label>
                             <select class="form-select" name="NumOfProducts" required>
@@ -66,8 +69,6 @@
                                 <option value="4">4</option>
                             </select>
                         </div>
-
-                        <!-- Estimated Salary -->
                         <div class="col-md-6">
                             <label class="form-label">Estimated Salary ($)</label>
                             <div class="input-group">
@@ -75,8 +76,6 @@
                                 <input type="number" class="form-control" name="EstimatedSalary" placeholder="50000.00" required step="0.01">
                             </div>
                         </div>
-
-                        <!-- Boolean Features -->
                         <div class="col-md-6">
                             <label class="form-label">Has Credit Card?</label>
                             <select class="form-select" name="HasCrCard" required>
@@ -84,7 +83,6 @@
                                 <option value="0">No</option>
                             </select>
                         </div>
-
                         <div class="col-md-6">
                             <label class="form-label">Is Active Member?</label>
                             <select class="form-select" name="IsActiveMember" required>
@@ -93,9 +91,8 @@
                             </select>
                         </div>
                     </div>
-
-                    <div class="text-center mt-5">
-                        <button type="submit" class="btn btn-primary btn-lg w-50" style="letter-spacing: 2px;">
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg px-5" style="letter-spacing:2px">
                             <i class="fas fa-search me-2"></i>Analyze Risk
                         </button>
                     </div>
@@ -103,254 +100,345 @@
             </div>
         </div>
 
-        <!-- Results Section (Hidden by default) -->
-        <div id="resultSection" class="card shadow mb-4 d-none fade-in">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold">Analysis Result</h6>
-                <span id="riskBadge" class="badge bg-secondary fs-6">Status Unknown</span>
-            </div>
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-6 text-center mb-3 mb-md-0">
-                        <h2 id="predictionText" class="fw-bold mb-1" style="font-size: 3rem;">--</h2>
-                        <p class="text-muted mb-0">Prediction</p>
-                        <div class="mt-4">
-                            <div class="progress" style="height: 30px;">
-                                <div id="confidenceBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                            </div>
-                            <small class="text-muted mt-2 d-block">Model Confidence: <span id="confidenceText" class="text-white">0%</span></small>
+        <!-- Result Section -->
+        <div id="resultSection" class="d-none fade-in">
+            <!-- Verdict Banner -->
+            <div id="verdictBanner" class="card shadow mb-3 verdict-banner">
+                <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3 py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div id="verdictIcon" class="verdict-icon-wrap"><i id="verdictIconI" class="fas fa-question fa-2x"></i></div>
+                        <div>
+                            <div id="predictionText" class="verdict-text">--</div>
+                            <div class="text-muted small">AI Prediction</div>
                         </div>
                     </div>
-                    <div class="col-md-6 border-start border-secondary ps-md-4">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3" style="color: var(--text-muted);">Top Influencing Factors (SHAP)</h6>
-                        <ul id="shapList" class="list-group list-group-flush small" style="background: transparent;">
-                            <!-- JS will populate -->
-                        </ul>
-                    </div>
-                </div>
-
-                <hr class="my-4" style="border-color: rgba(255,255,255,0.1);">
-
-                <!-- Strategy & Actions -->
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <div id="strategyBox" class="alert alert-info d-none bg-transparent border-info text-info">
-                            <h6 class="alert-heading fw-bold"><i class="fas fa-lightbulb me-2"></i>AI Retention Strategy</h6>
-                            <p id="strategyText" class="mb-0 small" style="color: #e0f7fa;"></p>
+                    <div class="text-center">
+                        <div class="gauge-wrap">
+                            <svg id="gaugeSvg" viewBox="0 0 120 70" width="160">
+                                <path d="M10,65 A50,50,0,0,1,110,65" stroke="rgba(255,255,255,0.07)" stroke-width="10" fill="none" stroke-linecap="round"/>
+                                <path id="gaugeArc" d="M10,65 A50,50,0,0,1,110,65" stroke="#38bdf8" stroke-width="10" fill="none" stroke-linecap="round"
+                                      stroke-dasharray="0 157" style="transition:stroke-dasharray 0.8s ease,stroke 0.5s"/>
+                                <text x="60" y="62" text-anchor="middle" font-family="Rajdhani" font-size="20" font-weight="800" fill="#e6edf3" id="gaugeText">0%</text>
+                            </svg>
+                            <div class="text-muted small text-uppercase" style="letter-spacing:2px;font-size:0.65rem;margin-top:-6px">Churn Probability</div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <button id="btnStrategy" class="btn btn-outline-primary w-100 py-2">
-                            <i class="fas fa-magic me-2"></i>Generate AI Strategy
-                        </button>
-                    </div>
-                    <div class="col-md-6">
-                        <button id="btnReport" class="btn btn-outline-dark w-100 py-2">
-                            <i class="fas fa-file-pdf me-2"></i>Download Full Report
-                        </button>
+                    <div>
+                        <span id="riskBadge" class="badge fs-6 px-3 py-2">Status</span>
                     </div>
                 </div>
             </div>
+
+            <div class="row g-3 mb-3">
+                <!-- SHAP Explanations -->
+                <div class="col-md-6">
+                    <div class="card shadow h-100">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold"><i class="fas fa-sliders-h me-2" style="color:var(--primary-color)"></i>Top Risk Factors (SHAP)</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <ul id="shapList" class="list-group list-group-flush small" style="background:transparent"></ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- Persona Card -->
+                <div class="col-md-6">
+                    <div class="card shadow h-100" id="personaCard">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold"><i class="fas fa-id-card me-2" style="color:var(--secondary-color)"></i>Customer Persona</h6>
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <div id="personaIcon" class="persona-icon-lg mb-3"><i id="personaIconI" class="fas fa-users fa-3x"></i></div>
+                            <div id="personaName" class="persona-name-lg mb-2">--</div>
+                            <div id="personaDesc" class="text-muted small"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Strategy -->
+            <div class="card shadow mb-3">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-lightbulb me-2" style="color:var(--warning-color)"></i>AI Retention Strategy</h6></div>
+                <div class="card-body">
+                    <div id="strategyBox" class="d-none">
+                        <div class="p-3 mb-3" style="background:rgba(167,139,250,0.06);border-left:3px solid var(--secondary-color);border-radius:0 6px 6px 0">
+                            <p id="strategyText" class="mb-0 small" style="color:#c9d1d9;line-height:1.7;white-space:pre-line"></p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <button id="btnStrategy" class="btn btn-outline-primary w-100 py-2">
+                                <i class="fas fa-magic me-2"></i>Generate Strategy
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="btnSave" class="btn w-100 py-2 d-none" style="border:1px solid rgba(52,211,153,0.5);color:var(--success-color);background:transparent;border-radius:6px">
+                                <i class="fas fa-save me-2"></i>Save to History
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="btnReport" class="btn btn-outline-dark w-100 py-2">
+                                <i class="fas fa-file-pdf me-2"></i>Download Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right sidebar: Guide & Model Info -->
+    <div class="col-lg-4">
+        <!-- Interpretation Guide -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-book-open me-2" style="color:var(--primary-color)"></i>Interpretation Guide</h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div style="width:10px;height:10px;border-radius:50%;background:var(--danger-color);flex-shrink:0"></div>
+                        <span class="small fw-bold" style="color:var(--danger-color);text-transform:uppercase;letter-spacing:1px;font-family:'Rajdhani'">Churn Risk</span>
+                    </div>
+                    <p class="small text-muted mb-0" style="line-height:1.5">Probability &gt; 50% — The model predicts this customer is <em>likely to leave</em>. Immediate retention action is recommended.</p>
+                </div>
+                <hr style="border-color:rgba(255,255,255,0.06)">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div style="width:10px;height:10px;border-radius:50%;background:var(--success-color);flex-shrink:0"></div>
+                        <span class="small fw-bold" style="color:var(--success-color);text-transform:uppercase;letter-spacing:1px;font-family:'Rajdhani'">Retained</span>
+                    </div>
+                    <p class="small text-muted mb-0" style="line-height:1.5">Probability &lt; 50% — Customer is likely to stay. Focus on loyalty programs to maintain engagement.</p>
+                </div>
+                <hr style="border-color:rgba(255,255,255,0.06)">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="fas fa-chart-bar" style="color:var(--primary-color);font-size:0.85rem"></i>
+                        <span class="small fw-bold" style="color:var(--text-main);text-transform:uppercase;letter-spacing:1px;font-family:'Rajdhani'">SHAP Values</span>
+                    </div>
+                    <p class="small text-muted mb-0" style="line-height:1.5"><strong style="color:var(--danger-color)">↑ Positive</strong> values push toward churn. <strong style="color:var(--success-color)">↓ Negative</strong> values push toward retention. Larger magnitude = stronger influence.</p>
+                </div>
+                <hr style="border-color:rgba(255,255,255,0.06)">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="fas fa-id-card" style="color:var(--secondary-color);font-size:0.85rem"></i>
+                        <span class="small fw-bold" style="color:var(--text-main);text-transform:uppercase;letter-spacing:1px;font-family:'Rajdhani'">Personas</span>
+                    </div>
+                    <p class="small text-muted mb-0" style="line-height:1.5">Cluster assignment from K-Means (k=4). Each persona has distinct risk and engagement characteristics used to tailor the retention strategy.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Summary Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-brain me-2" style="color:var(--secondary-color)"></i>Model Summary</h6>
+            </div>
+            <div class="card-body p-3">
+                {% set model_items = [
+                    ('Architecture', 'ANN — 5 Hidden Layers'),
+                    ('Input Features', '10 Customer Attributes'),
+                    ('Output', 'Sigmoid (0–1 probability)'),
+                    ('Explainability', 'SHAP KernelExplainer'),
+                    ('Segmentation', 'K-Means (k=4)'),
+                    ('Strategy AI', 'Google Gemini Flash')
+                ] %}
+                {% for label, val in model_items %}
+                <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                    <span class="small text-muted">{{ label }}</span>
+                    <span class="small fw-bold" style="color:var(--text-main);font-family:'Rajdhani'">{{ val }}</span>
+                </div>
+                {% endfor %}
+                <div class="mt-3">
+                    <a href="/model" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-chart-line me-2"></i>View Full Model Report
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Reference -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-list me-2" style="color:var(--warning-color)"></i>Feature Encodings</h6>
+            </div>
+            <div class="card-body p-3">
+                <table class="table table-dark table-sm mb-0" style="font-size:0.8rem">
+                    <tr><td class="text-muted">Geography</td><td style="color:var(--text-main)">France=0, Germany=1, Spain=2</td></tr>
+                    <tr><td class="text-muted">Gender</td><td style="color:var(--text-main)">Female=0, Male=1</td></tr>
+                    <tr><td class="text-muted">HasCrCard</td><td style="color:var(--text-main)">No=0, Yes=1</td></tr>
+                    <tr><td class="text-muted">IsActiveMember</td><td style="color:var(--text-main)">No=0, Yes=1</td></tr>
+                    <tr style="border:none"><td class="text-muted">Scaling</td><td style="color:var(--text-main)">MinMaxScaler [0,1]</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="actionToast" class="toast align-items-center border-0" style="background:rgba(17,24,39,0.98);border:1px solid rgba(96,165,250,0.2)!important" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMsg" style="color:#fff"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     </div>
 </div>
 
 <!-- Loading Overlay -->
 <div class="spinner-overlay" id="loader">
-    <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-3 fw-bold" style="color: var(--primary-color); letter-spacing: 2px;">PROCESSING DATA...</p>
+    <div class="spinner-border" role="status"></div>
+    <p class="mt-3 fw-bold" style="color:var(--primary-color);letter-spacing:2px">PROCESSING DATA...</p>
 </div>
 
+<style>
+.verdict-banner { border: none; }
+.verdict-icon-wrap { width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+.verdict-text { font-family:'Rajdhani';font-size:2.2rem;font-weight:800;line-height:1; }
+.gauge-wrap { display:inline-block; }
+.persona-icon-lg { font-size:3rem; }
+.persona-name-lg { font-family:'Rajdhani';font-size:1.4rem;font-weight:700;text-transform:uppercase;letter-spacing:2px; }
+</style>
 {% endblock %}
-
 {% block scripts %}
 <script>
-    let currentResult = null;
+let currentResult = null;
 
-    // Populate random default values on load
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.getElementById('predictForm');
-        const geographies = ['France', 'Germany', 'Spain'];
-        const genders = ['Male', 'Female'];
-        
-        form.elements['CreditScore'].value = Math.floor(Math.random() * (850 - 400 + 1)) + 400;
-        form.elements['Geography'].value = geographies[Math.floor(Math.random() * geographies.length)];
-        form.elements['Gender'].value = genders[Math.floor(Math.random() * genders.length)];
-        form.elements['Age'].value = Math.floor(Math.random() * (65 - 18 + 1)) + 18;
-        form.elements['Tenure'].value = Math.floor(Math.random() * 11);
-        form.elements['Balance'].value = (Math.random() * 150000).toFixed(2);
-        form.elements['NumOfProducts'].value = Math.floor(Math.random() * 3) + 1;
-        form.elements['EstimatedSalary'].value = (Math.random() * (180000 - 30000) + 30000).toFixed(2);
-        form.elements['HasCrCard'].value = Math.random() > 0.3 ? "1" : "0";
-        form.elements['IsActiveMember'].value = Math.random() > 0.5 ? "1" : "0";
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('predictForm');
+    const geos = ['France','Germany','Spain'], genders = ['Male','Female'];
+    form.elements['CreditScore'].value = Math.floor(Math.random()*(850-400+1))+400;
+    form.elements['Geography'].value = geos[Math.floor(Math.random()*geos.length)];
+    form.elements['Gender'].value = genders[Math.floor(Math.random()*2)];
+    form.elements['Age'].value = Math.floor(Math.random()*(65-18+1))+18;
+    form.elements['Tenure'].value = Math.floor(Math.random()*11);
+    form.elements['Balance'].value = (Math.random()*150000).toFixed(2);
+    form.elements['NumOfProducts'].value = Math.floor(Math.random()*3)+1;
+    form.elements['EstimatedSalary'].value = (Math.random()*(180000-30000)+30000).toFixed(2);
+    form.elements['HasCrCard'].value = Math.random()>0.3?'1':'0';
+    form.elements['IsActiveMember'].value = Math.random()>0.5?'1':'0';
+});
+
+document.getElementById('predictForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    document.getElementById('loader').classList.add('show');
+    const data = Object.fromEntries(new FormData(this).entries());
+    try {
+        const res = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const result = await res.json();
+        if(result.success) { currentResult = {...result, customer_data: data}; displayResult(result); }
+        else { showToast('Error: '+result.error, 'var(--danger-color)'); }
+    } catch(err) { showToast('Unexpected error.', 'var(--danger-color)'); }
+    finally { document.getElementById('loader').classList.remove('show'); }
+});
+
+function displayResult(data) {
+    document.getElementById('resultSection').classList.remove('d-none');
+    const isChurn = data.result === 'Churn';
+    const color = isChurn ? 'var(--danger-color)' : 'var(--success-color)';
+    const hex   = isChurn ? '#f87171' : '#34d399';
+    const rawProb = isChurn ? data.confidence : (100 - data.confidence);
+
+    document.getElementById('predictionText').textContent = data.result;
+    document.getElementById('predictionText').style.color = hex;
+    const iconWrap = document.getElementById('verdictIcon');
+    iconWrap.style.background = isChurn ? 'rgba(248,113,113,0.12)' : 'rgba(52,211,153,0.12)';
+    document.getElementById('verdictIconI').className = isChurn ? 'fas fa-exclamation-triangle fa-2x' : 'fas fa-check-circle fa-2x';
+    document.getElementById('verdictIconI').style.color = hex;
+    const badge = document.getElementById('riskBadge');
+    badge.style.background = isChurn ? 'rgba(248,113,113,0.15)' : 'rgba(52,211,153,0.15)';
+    badge.style.color = hex;
+    badge.textContent = isChurn ? 'HIGH RISK' : 'LOW RISK';
+
+    setGauge(rawProb, hex);
+
+    const list = document.getElementById('shapList');
+    list.innerHTML = '';
+    data.explanations.slice(0,6).forEach(exp => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent border-bottom py-2';
+        li.style.borderColor = 'rgba(255,255,255,0.06)';
+        const c = exp.type==='positive'?'#f87171':'#34d399';
+        const ic = exp.type==='positive'?'fa-arrow-up':'fa-arrow-down';
+        li.innerHTML = `<span class="small" style="color:#c9d1d9">${exp.feature}</span><span class="fw-bold small" style="color:${c}"><i class="fas ${ic} me-1"></i>${Math.abs(exp.influence).toFixed(4)}</span>`;
+        list.appendChild(li);
     });
 
-    document.getElementById('predictForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const loader = document.getElementById('loader');
-        
-        // Correct way to show flex loader
-        loader.classList.add('show');
+    const pColors = ['#a78bfa','#38bdf8','#34d399','#fbbf24'];
+    const pColor = pColors[data.cluster_id] || '#38bdf8';
+    document.getElementById('personaIconI').style.color = pColor;
+    document.getElementById('personaName').textContent = data.persona_name || 'Cluster '+data.cluster_id;
+    document.getElementById('personaName').style.color = pColor;
+    document.getElementById('personaDesc').textContent = data.persona_desc || '';
+    document.getElementById('personaCard').style.borderLeft = '3px solid '+pColor;
 
-        // Gather Data
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData.entries());
+    document.getElementById('strategyBox').classList.add('d-none');
+    document.getElementById('btnStrategy').disabled = false;
+    document.getElementById('btnSave').classList.add('d-none');
+    document.getElementById('resultSection').scrollIntoView({behavior:'smooth'});
+}
 
-        try {
-            const response = await fetch('/predict', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
+function setGauge(pct, color) {
+    const arc = document.getElementById('gaugeArc');
+    const total = 157;
+    const filled = (pct/100)*total;
+    arc.setAttribute('stroke-dasharray', `${filled} ${total-filled}`);
+    arc.setAttribute('stroke', color);
+    document.getElementById('gaugeText').textContent = pct.toFixed(0)+'%';
+}
 
-            if (result.success) {
-                currentResult = { ...result, customer_data: data };
-                displayResult(result);
-            } else {
-                alert('Error: ' + result.error);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An unexpected error occurred.');
-        } finally {
-            loader.classList.remove('show');
-        }
-    });
+document.getElementById('btnStrategy').addEventListener('click', async () => {
+    if(!currentResult) return;
+    const btn = document.getElementById('btnStrategy');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+    btn.disabled = true;
+    try {
+        const res = await fetch('/generate_strategy', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(currentResult) });
+        const data = await res.json();
+        if(data.success) {
+            document.getElementById('strategyBox').classList.remove('d-none');
+            document.getElementById('strategyText').textContent = data.strategy;
+            currentResult.strategy = data.strategy;
+            document.getElementById('btnSave').classList.remove('d-none');
+        } else { showToast('Strategy error: '+data.error, '#f87171'); }
+    } catch(e) { showToast('Network error.','#f87171'); }
+    finally { btn.innerHTML = orig; }
+});
 
-    function displayResult(data) {
-        const resultSection = document.getElementById('resultSection');
-        resultSection.classList.remove('d-none');
-        
-        // Update Prediction Text
-        const predText = document.getElementById('predictionText');
-        const riskBadge = document.getElementById('riskBadge');
-        const bar = document.getElementById('confidenceBar');
-        const confText = document.getElementById('confidenceText');
+document.getElementById('btnSave').addEventListener('click', async () => {
+    if(!currentResult || !currentResult.strategy) return;
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    try {
+        await fetch('/save_strategy', { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ customer_data: currentResult.customer_data, prediction: currentResult.result, strategy: currentResult.strategy }) });
+        showToast('Strategy saved to history!', '#34d399');
+    } catch(e) { showToast('Save failed.','#f87171'); }
+    finally { btn.disabled = false; }
+});
 
-        predText.textContent = data.result;
-        confText.textContent = data.confidence + '%';
-        bar.style.width = data.confidence + '%';
+document.getElementById('btnReport').addEventListener('click', async () => {
+    if(!currentResult) return;
+    const btn = document.getElementById('btnReport');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/generate_report', { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ ...currentResult, persona_name: currentResult.persona_name, persona_desc: currentResult.persona_desc }) });
+        if(res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href=url; a.download='ChurnGuard_Report.pdf';
+            document.body.appendChild(a); a.click(); a.remove();
+        } else { showToast('Report generation failed.','#f87171'); }
+    } catch(e) { showToast('Network error.','#f87171'); }
+    finally { btn.disabled = false; }
+});
 
-        if (data.result === 'Churn') {
-            predText.classList.remove('text-success');
-            predText.style.color = 'var(--danger-color)';
-            predText.style.textShadow = 'var(--glow-danger)';
-            
-            riskBadge.className = 'badge bg-danger fs-6';
-            riskBadge.textContent = 'High Risk';
-            
-            bar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
-        } else {
-            predText.style.color = 'var(--success-color)';
-            predText.style.textShadow = 'var(--glow-success)';
-            
-            riskBadge.className = 'badge bg-success fs-6';
-            riskBadge.textContent = 'Low Risk';
-            
-            bar.className = 'progress-bar bg-success progress-bar-striped progress-bar-animated';
-        }
-
-        // Update SHAP List
-        const list = document.getElementById('shapList');
-        list.innerHTML = '';
-        data.explanations.slice(0, 5).forEach(exp => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent text-white border-bottom border-secondary';
-            const colorClass = exp.type === 'positive' ? 'text-danger' : 'text-success';
-            const icon = exp.type === 'positive' ? 'fa-arrow-up' : 'fa-arrow-down';
-            
-            li.innerHTML = `
-                <span>${exp.feature}</span>
-                <span class="${colorClass} fw-bold">
-                    <i class="fas ${icon} me-1 small"></i>${Math.abs(exp.influence).toFixed(4)}
-                </span>
-            `;
-            list.appendChild(li);
-        });
-
-        // Reset Strategy Box
-        document.getElementById('strategyBox').classList.add('d-none');
-        document.getElementById('btnStrategy').disabled = false;
-        
-        // Scroll to result
-        resultSection.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    document.getElementById('btnStrategy').addEventListener('click', async () => {
-        if (!currentResult) return;
-        const btn = document.getElementById('btnStrategy');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
-        btn.disabled = true;
-
-        try {
-            const response = await fetch('/generate_strategy', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(currentResult)
-            });
-            const data = await response.json();
-            
-            if (data.success) {
-                const box = document.getElementById('strategyBox');
-                box.classList.remove('d-none');
-                document.getElementById('strategyText').innerText = data.strategy;
-                
-                // Add strategy to currentResult for reporting
-                currentResult.strategy = data.strategy;
-
-                // Save to DB
-                await fetch('/save_strategy', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        customer_data: currentResult.customer_data,
-                        prediction: currentResult.result,
-                        strategy: data.strategy
-                    })
-                });
-            } else {
-                alert('Failed to generate strategy: ' + data.error);
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            btn.innerHTML = originalText;
-        }
-    });
-
-    document.getElementById('btnReport').addEventListener('click', async () => {
-        if (!currentResult) return;
-        const btn = document.getElementById('btnReport');
-        btn.disabled = true;
-        
-        try {
-            const response = await fetch('/generate_report', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(currentResult)
-            });
-            
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = "Retention_Report.pdf";
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            } else {
-                alert("Failed to generate report");
-            }
-        } catch(e) {
-            console.error(e);
-        } finally {
-            btn.disabled = false;
-        }
-    });
+function showToast(msg, color) {
+    document.getElementById('toastMsg').style.color=color;
+    document.getElementById('toastMsg').textContent=msg;
+    const t=new bootstrap.Toast(document.getElementById('actionToast'),{delay:3000}); t.show();
+}
 </script>
 {% endblock %}

@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Page Banner -->
+<div class="page-banner fade-in mb-4" style="border-left-color:var(--warning-color);background:linear-gradient(90deg,rgba(251,191,36,0.04) 0%,rgba(13,17,23,0) 100%)">
+    <div class="page-banner-icon" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.25);color:var(--warning-color)">
+        <i class="fas fa-microscope"></i>
+    </div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title">Data Insights &amp; EDA</div>
+        <p class="page-banner-sub">Exploratory Data Analysis — feature distributions, correlations &amp; key business findings</p>
+    </div>
+    <span class="badge d-none d-md-inline-flex px-3 py-2" style="background:rgba(251,191,36,0.1);color:var(--warning-color);border:1px solid rgba(251,191,36,0.2)">10,000 Records</span>
+</div>
+
+<!-- Business Insight Cards -->
+<div class="row fade-in g-3 mb-4">
+    {% for card in insights_cards %}
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card h-100 insight-card" style="border-left:3px solid {{ card.color }}">
+            <div class="card-body p-3 text-center">
+                <div class="mb-2"><i class="fas {{ card.icon }} fa-lg" style="color:{{ card.color }}"></i></div>
+                <div class="insight-val" style="color:{{ card.color }}">{{ card.value }}</div>
+                <div class="insight-title">{{ card.title }}</div>
+                <div class="insight-desc">{{ card.desc }}</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Descriptive Stats Table -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-table me-2"></i>Descriptive Statistics</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 stats-table">
+                        <thead>
+                            <tr>
+                                <th>Statistic</th>
+                                {% for col in num_cols %}<th>{{ col }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in ['count','mean','std','min','25%','50%','75%','max'] %}
+                            <tr>
+                                <td class="stat-label">{{ stat }}</td>
+                                {% for col in num_cols %}
+                                <td>{{ stats[col][stat] | round(2) }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feature Distribution Charts -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-12 mb-2">
+        <h5 class="page-title" style="font-size:1rem"><i class="fas fa-chart-bar me-2"></i>Feature Distributions</h5>
+    </div>
+    {% for col in num_cols %}
+    <div class="col-xl-4 col-md-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-2">
+                <h6 class="m-0 font-weight-bold small">{{ col }}</h6>
+            </div>
+            <div class="card-body p-2">
+                <div style="height:180px"><canvas id="dist_{{ col }}"></canvas></div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Correlation Heatmap -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-fire me-2"></i>Feature Correlation Heatmap</h6>
+            </div>
+            <div class="card-body">
+                <div id="corrHeatmap" style="overflow-x:auto"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sample Data Table -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-database me-2"></i>Sample Data Preview</h6>
+                <span class="badge" style="background:rgba(56,189,248,0.12);color:#38bdf8">First 100 Records</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height:400px">
+                    <table class="table table-dark table-hover mb-0 stats-table" id="sampleTable">
+                        <thead class="sticky-top">
+                            <tr>
+                                <th>Row</th><th>CreditScore</th><th>Geography</th><th>Gender</th>
+                                <th>Age</th><th>Tenure</th><th>Balance</th><th>Products</th>
+                                <th>HasCard</th><th>Active</th><th>Salary</th>
+                                <th>Exited</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in sample %}
+                            <tr>
+                                <td class="text-muted">{{ loop.index }}</td>
+                                <td>{{ row.CreditScore }}</td>
+                                <td>{{ row.Geography }}</td>
+                                <td>{{ row.Gender }}</td>
+                                <td>{{ row.Age }}</td>
+                                <td>{{ row.Tenure }}</td>
+                                <td>${{ "{:,.0f}".format(row.Balance) }}</td>
+                                <td>{{ row.NumOfProducts }}</td>
+                                <td>{{ 'Yes' if row.HasCrCard == 1 else 'No' }}</td>
+                                <td>{{ 'Yes' if row.IsActiveMember == 1 else 'No' }}</td>
+                                <td>${{ "{:,.0f}".format(row.EstimatedSalary) }}</td>
+                                <td>
+                                    <span class="badge {{ 'text-bg-danger' if row.Exited == 1 else '' }}"
+                                          style="{{ 'background:rgba(52,211,153,0.12);color:#34d399' if row.Exited == 0 else '' }}">
+                                        {{ 'Churn' if row.Exited == 1 else 'Stay' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.insight-card { background: var(--bg-panel); }
+.insight-val { font-family:'Rajdhani'; font-size:2rem; font-weight:800; line-height:1.1; }
+.insight-title { font-family:'Rajdhani'; font-weight:700; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; color:#fff; }
+.insight-desc { font-size:0.72rem; color:#8b9bb4; margin-top:4px; line-height:1.4; }
+.stats-table thead th { background: #0d0e15; color: var(--primary-color); font-family:'Rajdhani'; letter-spacing:1px; font-size:0.82rem; border-color: rgba(255,255,255,0.08); position:sticky;top:0;z-index:2; padding: 12px 16px; white-space:nowrap; }
+.stats-table tbody td { font-size:0.85rem; border-color: rgba(255,255,255,0.05); color:#d1d5db; padding: 10px 16px; }
+.stats-table tbody tr:hover td { background: rgba(96,165,250,0.05); }
+.stat-label { color: var(--primary-color) !important; font-family:'Rajdhani'; font-weight:700; text-transform:uppercase; min-width:70px; }
+.corr-table { border-collapse: collapse; width: 100%; }
+.corr-table td, .corr-table th { width: 72px; height: 40px; text-align:center; font-size:0.65rem; font-family:'Rajdhani'; border: 1px solid rgba(255,255,255,0.05); }
+.corr-table th { color:#8b9bb4; background: #0d0e15; font-weight:700; letter-spacing:1px; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const T={backgroundColor:'rgba(7,11,20,0.95)',titleColor:'#38bdf8',bodyColor:'#e6edf3',borderColor:'rgba(56,189,248,0.25)',borderWidth:1,padding:8};
+Chart.defaults.color='#7d8590';Chart.defaults.font.family="'Rajdhani',sans-serif";
+
+const distData={{ dist_data|tojson }};
+const numCols={{ num_cols|tojson }};
+const colColors={'CreditScore':'#38bdf8','Age':'#a78bfa','Tenure':'#fbbf24','Balance':'#34d399','NumOfProducts':'#f87171','EstimatedSalary':'#38bdf8'};
+
+numCols.forEach(col => {
+    const d = distData[col];
+    const color = colColors[col] || '#38bdf8';
+    new Chart(document.getElementById('dist_'+col), {
+        type:'bar',
+        data:{ labels: d.bins.map(b=>b.toFixed(0)),
+            datasets:[{data:d.counts, backgroundColor:color+'55', borderColor:color, borderWidth:1, borderRadius:1, barPercentage:1, categoryPercentage:1}]},
+        options:{ maintainAspectRatio:false,
+            scales:{x:{ticks:{maxTicksLimit:6,color:'#8b9bb4'},grid:{display:false}},
+                    y:{ticks:{maxTicksLimit:4},grid:{color:'rgba(255,255,255,0.03)'}}},
+            plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` Count: ${c.raw}`}}}}
+    });
+});
+
+// Correlation Heatmap (rendered as HTML table)
+const corrData={{ corr_data|tojson }};
+function heatColor(v) {
+    if(v > 0) { return `rgba(56,189,248,${Math.min(v,1)*0.75})`; }
+    else { return `rgba(248,113,113,${Math.min(Math.abs(v),1)*0.75})`; }
+}
+let html='<table class="corr-table"><thead><tr><th></th>';
+corrData.labels.forEach(l=>{ html+=`<th title="${l}">${l.substring(0,8)}</th>`; });
+html+='</tr></thead><tbody>';
+corrData.values.forEach((row,i)=>{
+    html+=`<tr><th style="text-align:right;padding-right:6px">${corrData.labels[i].substring(0,10)}</th>`;
+    row.forEach(v=>{
+        const bg=heatColor(v);
+        const tc=Math.abs(v)>0.4?'#e6edf3':'#7d8590';
+        html+=`<td style="background:${bg};color:${tc}">${v.toFixed(2)}</td>`;
+    });
+    html+='</tr>';
+});
+html+='</tbody></table>';
+document.getElementById('corrHeatmap').innerHTML=html;
+</script>
+{% endblock %}

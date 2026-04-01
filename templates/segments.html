@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .dim-pill {
+        background: rgba(245,158,11,0.07);
+        border: 1px solid rgba(245,158,11,0.2);
+        color: #fbbf24;
+        border-radius: 20px;
+        padding: 5px 16px;
+        font-size: 0.78rem;
+        cursor: pointer;
+        transition: all 0.18s;
+        font-weight: 500;
+    }
+    .dim-pill.active, .dim-pill:hover {
+        background: rgba(245,158,11,0.18);
+        border-color: rgba(245,158,11,0.5);
+    }
+    .seg-kpi-label { font-size: 0.63rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px; }
+    .seg-kpi-val   { font-family: 'Rajdhani', sans-serif; font-size: 1.9rem; font-weight: 700; color: #f59e0b; line-height: 1.1; }
+    .seg-kpi-sub   { font-size: 0.73rem; color: var(--text-muted); }
+    .coh-table th  { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); cursor: pointer; user-select: none; white-space: nowrap; }
+    .coh-table th:hover { color: #f59e0b; }
+    .coh-table td  { font-size: 0.84rem; vertical-align: middle; }
+    .coh-table tr:hover { background: rgba(245,158,11,0.04) !important; cursor: pointer; }
+    .coh-table tr.selected-row { background: rgba(245,158,11,0.09) !important; outline: 1px solid rgba(245,158,11,0.3); }
+    .playbook-action {
+        border-left: 3px solid #f59e0b;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        background: rgba(245,158,11,0.04);
+        border-radius: 0 8px 8px 0;
+        transition: background 0.18s;
+    }
+    .playbook-action:hover { background: rgba(245,158,11,0.08); }
+    .risk-badge-low  { background: rgba(74,222,128,0.14); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); font-weight: 600; }
+    .risk-badge-mid  { background: rgba(255,230,0,0.11);  color: #ffe600; border: 1px solid rgba(255,230,0,0.3);  font-weight: 600; }
+    .risk-badge-high { background: rgba(248,113,113,0.14); color: #f87171; border: 1px solid rgba(248,113,113,0.3); font-weight: 600; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Page Banner -->
+<div class="page-banner fade-in mb-4" style="border-left-color:#f59e0b;background:linear-gradient(90deg,rgba(245,158,11,0.05) 0%,rgba(13,17,23,0) 100%)">
+    <div class="page-banner-icon" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.25);color:#f59e0b">
+        <i class="fas fa-layer-group"></i>
+    </div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title">Segment Intelligence</div>
+        <p class="page-banner-sub">Explore cohort-level churn patterns by Geography, Activity, Products, and Credit Band. Select any segment to generate a targeted AI retention playbook.</p>
+    </div>
+    <span class="badge d-none d-md-inline-flex px-3 py-2" style="background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2)"><i class="fas fa-robot me-1"></i>AI Playbooks</span>
+</div>
+
+<!-- Dimension Filter Pills -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4 fade-in">
+    <span class="text-muted small me-1">View by:</span>
+    <button class="dim-pill active" data-dim="geography">Geography</button>
+    <button class="dim-pill" data-dim="activity">Activity Status</button>
+    <button class="dim-pill" data-dim="products">Num of Products</button>
+    <button class="dim-pill" data-dim="credit">Credit Band</button>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4 fade-in">
+    <div class="col-6 col-md-3">
+        <div class="card shadow h-100">
+            <div class="card-body py-3 px-3">
+                <div class="seg-kpi-label"><i class="fas fa-fire me-1"></i>Highest Churn</div>
+                <div class="seg-kpi-val" id="kpi-max-churn">--%</div>
+                <div class="seg-kpi-sub" id="kpi-max-label">--</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow h-100">
+            <div class="card-body py-3 px-3">
+                <div class="seg-kpi-label"><i class="fas fa-shield-alt me-1"></i>Lowest Churn</div>
+                <div class="seg-kpi-val" id="kpi-min-churn" style="color:#4ade80">--%</div>
+                <div class="seg-kpi-sub" id="kpi-min-label">--</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow h-100">
+            <div class="card-body py-3 px-3">
+                <div class="seg-kpi-label"><i class="fas fa-users me-1"></i>Largest Segment</div>
+                <div class="seg-kpi-val" id="kpi-largest" style="color:var(--primary-color)">--</div>
+                <div class="seg-kpi-sub" id="kpi-largest-label">customers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow h-100">
+            <div class="card-body py-3 px-3">
+                <div class="seg-kpi-label"><i class="fas fa-dollar-sign me-1"></i>Avg Balance (Riskiest)</div>
+                <div class="seg-kpi-val" id="kpi-avg-bal" style="color:#34d399">$--</div>
+                <div class="seg-kpi-sub">highest-churn segment</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart + Table -->
+<div class="row g-4 mb-4 fade-in">
+    <div class="col-lg-7">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-chart-bar me-2" style="color:#f59e0b"></i>Churn Rate by Segment</h6>
+                <small class="text-muted d-none d-sm-inline">Click a bar to select segment</small>
+            </div>
+            <div class="card-body">
+                <canvas id="segChart" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-table me-2" style="color:#f59e0b"></i>Cohort Breakdown</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 coh-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-3" data-col="label">Segment <i class="fas fa-sort text-muted ms-1" style="font-size:0.58rem"></i></th>
+                                <th data-col="churn_rate">Churn% <i class="fas fa-sort text-muted ms-1" style="font-size:0.58rem"></i></th>
+                                <th data-col="count">Count <i class="fas fa-sort text-muted ms-1" style="font-size:0.58rem"></i></th>
+                                <th data-col="avg_balance">Avg Bal <i class="fas fa-sort text-muted ms-1" style="font-size:0.58rem"></i></th>
+                                <th class="pe-3" data-col="avg_age">Age <i class="fas fa-sort text-muted ms-1" style="font-size:0.58rem"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cohTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Retention Playbook Panel -->
+<div class="row fade-in">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-book-open me-2" style="color:#f59e0b"></i>Retention Playbook</h6>
+                <div id="playSegLabel" class="badge px-3 py-2" style="background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2)">Select a segment above</div>
+            </div>
+            <div class="card-body">
+                <div id="playbookHint" class="text-center py-4">
+                    <i class="fas fa-hand-pointer fa-2x mb-3 d-block" style="color:rgba(245,158,11,0.3)"></i>
+                    <p class="text-muted mb-0">Click any segment in the chart or table to generate a targeted AI retention playbook.</p>
+                </div>
+                <div id="playbookPanel" class="d-none">
+                    <div class="row g-3 mb-3" id="playbookStats"></div>
+                    <button class="btn btn-warning text-dark px-4 fw-bold" id="btnPlaybook">
+                        <i class="fas fa-robot me-2"></i>Generate AI Playbook
+                    </button>
+                    <div id="playbookLoading" class="mt-3 d-none text-center py-3">
+                        <i class="fas fa-circle-notch fa-spin fa-2x" style="color:#f59e0b"></i>
+                        <div class="text-muted mt-2 small">ChurnGuard AI is crafting your playbook…</div>
+                    </div>
+                    <div id="playbookContent" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const DATASETS = {
+        geography: {{ geo_data      | tojson }},
+        activity:  {{ activity_data | tojson }},
+        products:  {{ products_data | tojson }},
+        credit:    {{ credit_data   | tojson }}
+    };
+    const DIM_LABELS = {
+        geography: 'Geography',
+        activity:  'Activity Status',
+        products:  'Num of Products',
+        credit:    'Credit Band'
+    };
+    const OVERALL_CHURN = {{ overall_churn }};
+    const CHART_COLORS  = [
+        'rgba(245,158,11,0.75)', 'rgba(248,113,113,0.75)', 'rgba(74,222,128,0.75)',
+        'rgba(0,243,255,0.75)',  'rgba(167,139,250,0.75)', 'rgba(251,191,36,0.75)'
+    ];
+
+    let currentDim = 'geography';
+    let currentSeg = null;
+    let segChart   = null;
+    let sortCol    = 'churn_rate';
+    let sortAsc    = false;
+
+    function riskBadge(rate) {
+        const cls = rate >= 30 ? 'risk-badge-high' : rate >= 15 ? 'risk-badge-mid' : 'risk-badge-low';
+        return `<span class="badge ${cls}">${rate}%</span>`;
+    }
+
+    function updateKPIs(data) {
+        const byCh   = [...data].sort((a, b) => b.churn_rate - a.churn_rate);
+        const bySz   = [...data].sort((a, b) => b.count - a.count);
+        document.getElementById('kpi-max-churn').textContent  = byCh[0].churn_rate + '%';
+        document.getElementById('kpi-max-label').textContent  = byCh[0].label;
+        document.getElementById('kpi-min-churn').textContent  = byCh[byCh.length-1].churn_rate + '%';
+        document.getElementById('kpi-min-label').textContent  = byCh[byCh.length-1].label;
+        document.getElementById('kpi-largest').textContent    = bySz[0].count.toLocaleString();
+        document.getElementById('kpi-largest-label').textContent = bySz[0].label;
+        document.getElementById('kpi-avg-bal').textContent    = '$' + byCh[0].avg_balance.toLocaleString(undefined, {maximumFractionDigits:0});
+    }
+
+    function updateChart(data) {
+        const labels = data.map(d => d.label);
+        const values = data.map(d => d.churn_rate);
+        const colors = data.map((d, i) =>
+            currentSeg && currentSeg.label === d.label
+                ? 'rgba(245,158,11,1)' : CHART_COLORS[i % CHART_COLORS.length]
+        );
+        const refLine = Array(labels.length).fill(OVERALL_CHURN);
+
+        if (segChart) { segChart.destroy(); segChart = null; }
+        const ctx = document.getElementById('segChart').getContext('2d');
+        segChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Churn Rate %',
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Overall Avg (' + OVERALL_CHURN + '%)',
+                        data: refLine,
+                        type: 'line',
+                        borderColor: 'rgba(255,255,255,0.22)',
+                        borderDash: [6, 3],
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                onClick: (e, elements) => {
+                    if (elements.length > 0 && elements[0].datasetIndex === 0) {
+                        selectSegment(data[elements[0].index]);
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#8b9bb4', font: { size: 11 }, boxWidth: 14 } },
+                    tooltip: { callbacks: { label: ctx => ` ${ctx.raw}% churn rate` } }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8b9bb4' } },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8b9bb4', callback: v => v + '%' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    function updateTable(data) {
+        const sorted = [...data].sort((a, b) => {
+            const av = a[sortCol], bv = b[sortCol];
+            if (typeof av === 'string') return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+            return sortAsc ? av - bv : bv - av;
+        });
+        const tbody = document.getElementById('cohTableBody');
+        tbody.innerHTML = sorted.map(d => `
+            <tr class="${currentSeg && currentSeg.label === d.label ? 'selected-row' : ''}" data-lbl="${d.label.replace(/"/g,'&quot;')}">
+                <td class="ps-3 fw-bold">${d.label}</td>
+                <td>${riskBadge(d.churn_rate)}</td>
+                <td>${d.count.toLocaleString()}</td>
+                <td>$${d.avg_balance.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+                <td class="pe-3">${d.avg_age}</td>
+            </tr>`).join('');
+        tbody.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+                const seg = data.find(d => d.label === row.dataset.lbl);
+                if (seg) selectSegment(seg);
+            });
+        });
+    }
+
+    function selectSegment(seg) {
+        currentSeg = seg;
+        updateChart(DATASETS[currentDim]);
+        updateTable(DATASETS[currentDim]);
+        document.getElementById('playbookHint').classList.add('d-none');
+        document.getElementById('playbookPanel').classList.remove('d-none');
+        document.getElementById('playbookContent').innerHTML = '';
+        document.getElementById('playbookLoading').classList.add('d-none');
+        document.getElementById('playSegLabel').textContent = seg.label;
+        const rateColor = seg.churn_rate >= 30 ? '#f87171' : seg.churn_rate >= 15 ? '#ffe600' : '#4ade80';
+        document.getElementById('playbookStats').innerHTML = `
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px">
+                    <div class="seg-kpi-label">Churn Rate</div>
+                    <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:${rateColor}">${seg.churn_rate}%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background:rgba(0,243,255,0.04);border:1px solid rgba(0,243,255,0.12);border-radius:8px">
+                    <div class="seg-kpi-label">Segment Size</div>
+                    <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--primary-color)">${seg.count.toLocaleString()}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background:rgba(52,211,153,0.04);border:1px solid rgba(52,211,153,0.12);border-radius:8px">
+                    <div class="seg-kpi-label">Avg Balance</div>
+                    <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:#34d399">$${seg.avg_balance.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:8px">
+                    <div class="seg-kpi-label">Avg Age</div>
+                    <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--secondary-color)">${seg.avg_age}</div>
+                </div>
+            </div>`;
+    }
+
+    function renderDimension(dim) {
+        currentDim = dim;
+        currentSeg = null;
+        document.getElementById('playbookHint').classList.remove('d-none');
+        document.getElementById('playbookPanel').classList.add('d-none');
+        document.getElementById('playSegLabel').textContent = 'Select a segment above';
+        const data = DATASETS[dim];
+        updateKPIs(data);
+        updateChart(data);
+        updateTable(data);
+    }
+
+    // Dimension pill clicks
+    document.querySelectorAll('.dim-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.dim-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            renderDimension(pill.dataset.dim);
+        });
+    });
+
+    // Table column sort
+    document.querySelectorAll('.coh-table th').forEach(th => {
+        th.addEventListener('click', () => {
+            const col = th.dataset.col;
+            sortAsc = sortCol === col ? !sortAsc : false;
+            sortCol = col;
+            updateTable(DATASETS[currentDim]);
+        });
+    });
+
+    // Generate Playbook
+    document.getElementById('btnPlaybook').addEventListener('click', async () => {
+        if (!currentSeg) return;
+        const btn = document.getElementById('btnPlaybook');
+        btn.disabled = true;
+        document.getElementById('playbookLoading').classList.remove('d-none');
+        document.getElementById('playbookContent').innerHTML = '';
+
+        try {
+            const res  = await fetch('/segments/playbook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    segment_label: currentSeg.label,
+                    churn_rate:    currentSeg.churn_rate,
+                    avg_age:       currentSeg.avg_age,
+                    avg_balance:   currentSeg.avg_balance,
+                    count:         currentSeg.count,
+                    dimension:     DIM_LABELS[currentDim]
+                })
+            });
+            const data = await res.json();
+            document.getElementById('playbookLoading').classList.add('d-none');
+
+            if (data.success) {
+                // Parse "**Action N: Title**\nBody" format
+                const raw     = data.playbook;
+                const chunks  = raw.split(/\*\*Action \d+:\s*/);
+                const actions = chunks.filter(s => s.trim().length > 0);
+                let html = '';
+
+                if (actions.length >= 2) {
+                    actions.forEach((chunk, i) => {
+                        const nl    = chunk.indexOf('\n');
+                        const title = nl !== -1 ? chunk.slice(0, nl).replace(/\*\*/g,'').trim() : chunk.trim();
+                        const body  = nl !== -1 ? chunk.slice(nl + 1).replace(/\*\*/g,'').trim() : '';
+                        html += `<div class="playbook-action">
+                            <div class="fw-bold mb-1" style="color:#f59e0b">
+                                <span class="badge me-2" style="background:#f59e0b;color:#000;font-size:0.7rem">${i + 1}</span>${title}
+                            </div>
+                            <div class="small text-muted">${body.replace(/\n/g,'<br>')}</div>
+                        </div>`;
+                    });
+                } else {
+                    // Fallback: render raw with light formatting
+                    html = `<div class="p-3" style="background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.15);border-radius:8px">
+                        <div class="small text-muted">${raw.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>
+                    </div>`;
+                }
+                document.getElementById('playbookContent').innerHTML = html;
+            } else {
+                document.getElementById('playbookContent').innerHTML =
+                    `<div class="alert alert-danger">${data.error}</div>`;
+            }
+        } catch (err) {
+            document.getElementById('playbookLoading').classList.add('d-none');
+            document.getElementById('playbookContent').innerHTML =
+                `<div class="alert alert-danger">Network error. Please try again.</div>`;
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // Initial render
+    renderDimension('geography');
+</script>
+{% endblock %}

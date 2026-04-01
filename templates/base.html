@@ -4,68 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChurnGuard Intelligence</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
-    
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">
+    <!-- Navbar: logo + breadcrumb + hamburger only -->
+    <nav class="navbar navbar-dark sticky-top">
+        <div class="container-fluid px-4 d-flex align-items-center gap-3">
+            <a class="navbar-brand" href="/">
                 <i class="fas fa-shield-alt me-2"></i>ChurnGuard
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+            <!-- Current page breadcrumb -->
+            <span class="nav-breadcrumb d-none d-sm-inline" id="navBreadcrumb"></span>
+            <button class="btn nav-menu-btn ms-auto" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#sideNavCanvas">
+                <i class="fas fa-bars me-2"></i><span>MENU</span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('home') }}"><i class="fas fa-calculator me-1"></i> Predict</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-chart-line me-1"></i> Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('personas') }}"><i class="fas fa-users me-1"></i> Personas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('lab') }}"><i class="fas fa-flask me-1"></i> Retention Lab</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('chat') }}"><i class="fas fa-comments me-1"></i> AI Assistant</a>
-                    </li>
-                </ul>
-            </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="container py-4 flex-grow-1">
+    <!-- Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-end side-nav" tabindex="-1" id="sideNavCanvas">
+        <div class="offcanvas-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-shield-alt" style="color:var(--primary-color);font-size:1.4rem"></i>
+                <span style="font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;color:var(--primary-color);letter-spacing:2px">CHURNGUARD</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column p-0">
+            <div class="side-nav-section-label px-4 pt-3 pb-1">Navigation</div>
+            <nav class="side-nav-links flex-grow-1">
+                <a href="/" class="side-nav-item" data-path="/">
+                    <i class="fas fa-home"></i><span>Home</span>
+                </a>
+                <a href="/predict" class="side-nav-item" data-path="/predict">
+                    <i class="fas fa-user-check"></i><span>Churn Predictor</span>
+                    <span class="side-badge">ANN</span>
+                </a>
+                <a href="/dashboard" class="side-nav-item" data-path="/dashboard">
+                    <i class="fas fa-chart-bar"></i><span>Dashboard</span>
+                </a>
+                <a href="/insights" class="side-nav-item" data-path="/insights">
+                    <i class="fas fa-microscope"></i><span>Data Insights</span>
+                    <span class="side-badge">EDA</span>
+                </a>
+                <a href="/model" class="side-nav-item" data-path="/model">
+                    <i class="fas fa-brain"></i><span>Model Intelligence</span>
+                </a>
+                <a href="/personas" class="side-nav-item" data-path="/personas">
+                    <i class="fas fa-users"></i><span>Customer Personas</span>
+                </a>
+                <a href="/segments" class="side-nav-item" data-path="/segments">
+                    <i class="fas fa-layer-group"></i><span>Segment Intelligence</span>
+                    <span class="side-badge" style="background:rgba(245,158,11,0.12);color:#fbbf24;border-color:rgba(245,158,11,0.25)">AI</span>
+                </a>
+                <a href="/lab" class="side-nav-item" data-path="/lab">
+                    <i class="fas fa-flask"></i><span>What-If Lab</span>
+                </a>
+                <a href="/history" class="side-nav-item" data-path="/history">
+                    <i class="fas fa-history"></i><span>Strategy History</span>
+                </a>
+                <a href="/chat" class="side-nav-item" data-path="/chat">
+                    <i class="fas fa-comments"></i><span>AI Analyst Chat</span>
+                    <span class="side-badge" style="background:rgba(167,139,250,0.12);color:#a78bfa;border-color:rgba(167,139,250,0.25)">Gemini</span>
+                </a>
+            </nav>
+            <div class="side-nav-footer px-4 py-3">
+                <small style="color:var(--text-muted);font-size:0.72rem;letter-spacing:1px">CHURNGUARD INTELLIGENCE PLATFORM &copy; 2026</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4 py-4 flex-grow-1">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Footer -->
     <footer>
-        <div class="container pt-3 pb-3 text-center">
-            <p class="mb-0 small" style="letter-spacing: 1px;">&copy; 2026 CHURNGUARD INTELLIGENCE PLATFORM</p>
+        <div class="container-fluid px-4 pt-3 pb-3 text-center">
+            <p class="mb-0 small" style="letter-spacing:1px">&copy; 2026 CHURNGUARD INTELLIGENCE PLATFORM &mdash; AI-Powered Customer Retention</p>
         </div>
     </footer>
 
-    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Common JS -->
     <script>
-        // Highlight active nav item
         document.addEventListener("DOMContentLoaded", function() {
-            const currentPath = window.location.pathname;
-            document.querySelectorAll('.nav-link').forEach(link => {
-                if(link.getAttribute('href') === currentPath) {
+            const path = window.location.pathname;
+            const PAGE_NAMES = {
+                '/': 'Home',
+                '/predict': 'Churn Predictor',
+                '/dashboard': 'Analytics Dashboard',
+                '/insights': 'Data Insights',
+                '/model': 'Model Intelligence',
+                '/personas': 'Customer Personas',
+                '/segments': 'Segment Intelligence',
+                '/lab': 'What-If Lab',
+                '/history': 'Strategy History',
+                '/chat': 'AI Analyst Chat',
+            };
+            // Breadcrumb
+            const crumb = document.getElementById('navBreadcrumb');
+            if (crumb && path !== '/') {
+                crumb.textContent = '/ ' + (PAGE_NAMES[path] || path.replace('/', '').toUpperCase());
+            }
+            // Active sidebar item
+            document.querySelectorAll('.side-nav-item').forEach(link => {
+                const dp = link.getAttribute('data-path');
+                if (dp === path || (dp !== '/' && path.startsWith(dp))) {
                     link.classList.add('active');
                 }
             });

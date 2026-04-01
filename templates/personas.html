@@ -2,145 +2,154 @@
 
 {% block head %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
 {% block content %}
-<div class="d-sm-flex align-items-center justify-content-between mb-4 fade-in">
-    <h1 class="h3 mb-0 text-primary">Customer Personas (Clustering Analysis)</h1>
+<!-- Page Banner -->
+<div class="page-banner fade-in mb-4" style="border-left-color:var(--secondary-color);background:linear-gradient(90deg,rgba(167,139,250,0.04) 0%,rgba(13,17,23,0) 100%)">
+    <div class="page-banner-icon" style="background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.25);color:var(--secondary-color)">
+        <i class="fas fa-users"></i>
+    </div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title">Customer Personas</div>
+        <p class="page-banner-sub">K-Means clustering (k=4) segmentation — 4 distinct behavioural profiles from 10,000 customers</p>
+    </div>
+    <span class="badge d-none d-md-inline-flex px-3 py-2" style="background:rgba(167,139,250,0.1);color:var(--secondary-color);border:1px solid rgba(167,139,250,0.2)">K-Means · k=4</span>
 </div>
 
-<div class="row fade-in">
-    <!-- 3D Cluster Plot (First, as requested) -->
-    <div class="col-12 mb-4">
+<!-- Persona Cards -->
+<div class="row fade-in g-3 mb-4">
+    {% set colors = ['#a78bfa','#38bdf8','#34d399','#fbbf24'] %}
+    {% for persona in persona_data %}
+    {% set color = colors[persona.id] %}
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow h-100" style="border-left:3px solid {{ color }};box-shadow:-5px 0 20px -5px {{ color }}44 !important">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div style="width:48px;height:48px;border-radius:50%;background:{{ color }}22;display:flex;align-items:center;justify-content:center;border:1px solid {{ color }}55">
+                        <i class="fas {{ persona.icon }} fa-lg" style="color:{{ color }}"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="color:{{ color }};font-family:'Rajdhani';letter-spacing:1px;text-transform:uppercase;font-size:0.9rem">
+                            {{ persona.name }}
+                        </div>
+                        <div class="small text-muted">{{ persona.count }} customers</div>
+                    </div>
+                </div>
+                <p class="small text-muted mb-3" style="line-height:1.5">{{ persona.description }}</p>
+                <div class="row g-2 text-center">
+                    <div class="col-6">
+                        <div class="p-2" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                            <div style="color:{{ color }};font-family:'Rajdhani';font-weight:800;font-size:1.2rem">{{ persona.avg_age }}</div>
+                            <div class="text-muted" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px">Avg Age</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                            <div style="color:{{ color }};font-family:'Rajdhani';font-weight:800;font-size:1.2rem">{{ persona.active_pct }}%</div>
+                            <div class="text-muted" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px">Active</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                            <div style="font-family:'Rajdhani';font-weight:800;font-size:1.2rem" class="{{ 'text-danger' if persona.churn_rate > 20 else 'text-success' }}">{{ persona.churn_rate }}%</div>
+                            <div class="text-muted" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px">Churn Rate</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                            <div style="color:{{ color }};font-family:'Rajdhani';font-weight:800;font-size:1.2rem">{{ persona.avg_tenure }}</div>
+                            <div class="text-muted" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px">Avg Tenure</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-2 border-top border-secondary">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Avg Balance</span><span style="color:{{ color }}">${{ "{:,.0f}".format(persona.avg_balance) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Avg Credit Score</span><span style="color:{{ color }}">{{ persona.avg_credit }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>Avg Salary</span><span style="color:{{ color }}">${{ "{:,.0f}".format(persona.avg_salary) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 3D Scatter Plot -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-12">
         <div class="card shadow">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold">3D Feature Exploration</h6>
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-cube me-2"></i>3D Cluster Visualization — Age / Balance / Credit Score</h6>
             </div>
             <div class="card-body">
-                <div id="clusterPlot" style="height: 600px;"></div>
-                <p class="text-center text-muted small mt-2" style="font-family: 'Rajdhani'; letter-spacing: 2px;">
-                    X: AGE | Y: BALANCE | Z: CREDIT SCORE | COLOR: CLUSTER GROUP
+                <div id="clusterPlot" style="height:580px"></div>
+                <p class="text-center text-muted small mt-2" style="font-family:'Rajdhani';letter-spacing:2px">
+                    SAMPLE OF 1,000 CUSTOMERS | COLOR = CLUSTER GROUP
                 </p>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Persona Cards -->
-    <div class="col-12 mb-4">
-        <div class="row">
-            {% for persona in persona_data %}
-            <!-- Define neon colors for each cluster index to match plot as closely as possible -->
-            {% if persona.id == 0 %}
-                {% set border_color = '#000000' %} <!-- Replaced by style block below based on loop index generally, but doing inline style for specifics is easier -->
-            {% endif %}
-            
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2 cluster-card-{{ persona.id }}">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-uppercase mb-1 cluster-title-{{ persona.id }}" style="letter-spacing: 1px;">
-                                    Cluster {{ persona.id }} ({{ persona.count }} Customers)</div>
-                                <div class="h5 mb-0 font-weight-bold text-white">Churn Rate: <span class="{{ 'text-danger' if persona.churn_rate > 20 else 'text-success' }}" style="text-shadow: 0 0 5px currentColor;">{{ persona.churn_rate }}%</span></div>
-                                <div class="mt-3 small text-muted">
-                                    <div class="mb-1"><i class="fas fa-user me-2" style="color: var(--text-muted)"></i> Avg Age: <span class="text-white">{{ persona.avg_age }}</span></div>
-                                    <div class="mb-1"><i class="fas fa-wallet me-2" style="color: var(--text-muted)"></i> Avg Bal: <span class="text-white">${{ persona.avg_balance }}</span></div>
-                                    <div><i class="fas fa-star me-2" style="color: var(--text-muted)"></i> Avg Score: <span class="text-white">{{ persona.avg_credit }}</span></div>
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-users fa-2x text-muted" style="opacity: 0.1"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+<!-- Cluster Comparison Charts -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-chart-bar me-2"></i>Churn Rate per Persona</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="churnRateChart"></canvas></div></div>
+        </div>
+    </div>
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-pie-chart me-2"></i>Customer Distribution by Persona</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="distChart"></canvas></div></div>
         </div>
     </div>
 </div>
-
-<style>
-    /* Neon mapping matching the 3D Chart */
-    /* Cluster 0: Neon Purple */
-    .cluster-card-0 { border-left: 3px solid #bc13fe !important; box-shadow: -5px 0 15px -5px rgba(188, 19, 254, 0.3); }
-    .cluster-title-0 { color: #bc13fe !important; text-shadow: 0 0 5px rgba(188, 19, 254, 0.5); }
-    
-    /* Cluster 1: Neon Cyan */
-    .cluster-card-1 { border-left: 3px solid #00f3ff !important; box-shadow: -5px 0 15px -5px rgba(0, 243, 255, 0.3); }
-    .cluster-title-1 { color: #00f3ff !important; text-shadow: 0 0 5px rgba(0, 243, 255, 0.5); }
-
-    /* Cluster 2: Neon Green */
-    .cluster-card-2 { border-left: 3px solid #0aff60 !important; box-shadow: -5px 0 15px -5px rgba(10, 255, 96, 0.3); }
-    .cluster-title-2 { color: #0aff60 !important; text-shadow: 0 0 5px rgba(10, 255, 96, 0.5); }
-
-    /* Cluster 3: Neon Yellow */
-    .cluster-card-3 { border-left: 3px solid #ffe600 !important; box-shadow: -5px 0 15px -5px rgba(255, 230, 0, 0.3); }
-    .cluster-title-3 { color: #ffe600 !important; text-shadow: 0 0 5px rgba(255, 230, 0, 0.5); }
-</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const plotData = {{ plot_data | tojson }};
-    
-    // Explicit neon colors for clusters 0-3
-    const neonColors = ['#bc13fe', '#00f3ff', '#0aff60', '#ffe600'];
-    const pointColors = plotData.cluster.map(c => neonColors[c]);
+const plotData={{ plot_data|tojson }};
+const personaData={{ persona_data|tojson }};
+const neonColors=['#a78bfa','#38bdf8','#34d399','#fbbf24'];
+const pointColors=plotData.cluster.map(c=>neonColors[c]);
 
-    const trace1 = {
-        x: plotData.x,
-        y: plotData.y,
-        z: plotData.z,
-        mode: 'markers',
-        marker: {
-            size: 5,
-            color: pointColors, // Use explicit colors instead of scale
-            opacity: 0.9,
-            line: { width: 0 }
-        },
-        type: 'scatter3d'
-    };
+Plotly.newPlot('clusterPlot',[{x:plotData.x,y:plotData.y,z:plotData.z,mode:'markers',
+    marker:{size:5,color:pointColors,opacity:0.85,line:{width:0}},type:'scatter3d'}],
+    {margin:{l:0,r:0,b:0,t:0},scene:{
+        xaxis:{title:'Age',backgroundcolor:'rgba(0,0,0,0)',gridcolor:'rgba(255,255,255,0.06)',showbackground:false,zerolinecolor:'rgba(255,255,255,0.1)',color:'#8b9bb4'},
+        yaxis:{title:'Balance',backgroundcolor:'rgba(0,0,0,0)',gridcolor:'rgba(255,255,255,0.06)',showbackground:false,zerolinecolor:'rgba(255,255,255,0.1)',color:'#8b9bb4'},
+        zaxis:{title:'Credit Score',backgroundcolor:'rgba(0,0,0,0)',gridcolor:'rgba(255,255,255,0.06)',showbackground:false,zerolinecolor:'rgba(255,255,255,0.1)',color:'#8b9bb4'},
+        bgcolor:'rgba(0,0,0,0)'},
+    paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{color:'#e0e0e0',family:'Rajdhani'}},
+    {responsive:true});
 
-    const layout = {
-        margin: {
-            l: 0, r: 0, b: 0, t: 0
-        },
-        scene: {
-            xaxis: {
-                title: 'Age', 
-                backgroundcolor: "rgba(0,0,0,0)",
-                gridcolor: "rgba(0, 243, 255, 0.1)",
-                showbackground: false,
-                zerolinecolor: "rgba(0, 243, 255, 0.3)",
-                color: "#8b9bb4"
-            },
-            yaxis: {
-                title: 'Balance', 
-                backgroundcolor: "rgba(0,0,0,0)",
-                gridcolor: "rgba(0, 243, 255, 0.1)",
-                showbackground: false,
-                zerolinecolor: "rgba(0, 243, 255, 0.3)",
-                color: "#8b9bb4"
-            },
-            zaxis: {
-                title: 'Credit Score', 
-                backgroundcolor: "rgba(0,0,0,0)",
-                gridcolor: "rgba(0, 243, 255, 0.1)",
-                showbackground: false,
-                zerolinecolor: "rgba(0, 243, 255, 0.3)",
-                color: "#8b9bb4"
-            },
-            bgcolor: "rgba(0,0,0,0)"
-        },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        font: {
-            color: '#e0e0e0',
-            family: 'Rajdhani'
-        }
-    };
+const T={backgroundColor:'rgba(7,11,20,0.95)',titleColor:'#38bdf8',bodyColor:'#e6edf3',borderColor:'rgba(56,189,248,0.25)',borderWidth:1,padding:10};
+Chart.defaults.color='#8b9bb4';Chart.defaults.font.family="'Rajdhani',sans-serif";
 
-    Plotly.newPlot('clusterPlot', [trace1], layout, {responsive: true});
+new Chart(document.getElementById('churnRateChart'),{type:'bar',
+    data:{labels:personaData.map(p=>p.name),
+        datasets:[{label:'Churn Rate (%)',data:personaData.map(p=>p.churn_rate),
+            backgroundColor:neonColors.map(c=>c+'55'),borderColor:neonColors,borderWidth:2,borderRadius:2,barPercentage:0.6}]},
+    options:{maintainAspectRatio:false,scales:{
+        y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.03)'}},
+        x:{grid:{display:false},ticks:{color:'#fff',font:{weight:'bold'}}}},
+    plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` ${c.raw}%`}}}}});
+
+new Chart(document.getElementById('distChart'),{type:'doughnut',
+    data:{labels:personaData.map(p=>p.name),
+        datasets:[{data:personaData.map(p=>p.count),backgroundColor:neonColors.map(c=>c+'99'),
+            borderColor:neonColors,borderWidth:2,hoverOffset:12}]},
+    options:{maintainAspectRatio:false,plugins:{
+        tooltip:{...T,callbacks:{label:c=>` ${c.raw} customers`}},
+        legend:{position:'bottom',labels:{usePointStyle:true,padding:16,color:'#fff'}}}}});
 </script>
 {% endblock %}

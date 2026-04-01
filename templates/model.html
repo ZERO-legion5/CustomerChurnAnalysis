@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+{% if loading %}
+<div class="alert d-flex align-items-center gap-3 mb-4" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;color:var(--warning-color)">
+    <div class="spinner-border spinner-border-sm" role="status"></div>
+    <div><strong>Model stats are still computing.</strong> This page will show live data once the background analysis completes — usually within 30–60 seconds of server start. Refresh to check.</div>
+</div>
+{% endif %}
+<!-- Page Banner -->
+<div class="page-banner fade-in mb-4">
+    <div class="page-banner-icon" style="background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.25);color:var(--secondary-color)">
+        <i class="fas fa-brain"></i>
+    </div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title" style="border-left-color:var(--secondary-color)">Model Intelligence</div>
+        <p class="page-banner-sub">ANN performance metrics, confusion matrix, ROC curves &amp; explainability analysis</p>
+    </div>
+    <div class="d-none d-md-flex gap-3">
+        <div class="text-center px-3 py-2" style="border-left:1px solid rgba(255,255,255,0.06)">
+            <div style="font-family:'Rajdhani';font-size:1.3rem;font-weight:700;color:var(--secondary-color)">{{ acc }}%</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Accuracy</div>
+        </div>
+        <div class="text-center px-3 py-2" style="border-left:1px solid rgba(255,255,255,0.06)">
+            <div style="font-family:'Rajdhani';font-size:1.3rem;font-weight:700;color:var(--success-color)">{{ auc }}%</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">AUC-ROC</div>
+        </div>
+    </div>
+</div>
+
+<!-- Metric Cards -->
+<div class="row fade-in g-3 mb-4">
+    {% set metrics = [
+        ('Accuracy',    acc,  '#38bdf8', 'fa-bullseye'),
+        ('AUC-ROC',     auc,  '#34d399', 'fa-chart-line'),
+        ('F1 Score',    f1,   '#a78bfa', 'fa-balance-scale'),
+        ('Recall',      rec,  '#fbbf24', 'fa-search'),
+        ('Precision',   prec, '#f87171', 'fa-crosshairs')
+    ] %}
+    {% for label, val, color, icon in metrics %}
+    <div class="col-xl col-md-4 col-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="color:{{ color }};background:{{ color }}1a"><i class="fas {{ icon }} fa-lg"></i></div>
+                <div>
+                    <div class="kpi-value" style="color:{{ color }}">{{ val }}%</div>
+                    <div class="kpi-label">{{ label }}</div>
+                </div>
+            </div>
+            <div class="kpi-bar" style="background:linear-gradient(90deg,{{ color }},transparent)"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ROC + PR Curves -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-chart-line me-2"></i>ROC Curve <span class="badge ms-2" style="background:rgba(52,211,153,0.12);color:#34d399;font-size:0.75rem">AUC={{ auc }}%</span></h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container"><canvas id="rocChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-wave-square me-2"></i>Precision-Recall Curve</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container"><canvas id="prChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confusion Matrix + SHAP -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-xl-5 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-th me-2"></i>Confusion Matrix</h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="confusion-matrix-wrap">
+                    <div class="cm-grid">
+                        <!-- Column Headers -->
+                        <div class="cm-empty"></div>
+                        <div class="cm-header text-center" colspan="2" style="grid-column:2/4">
+                            <span class="small text-muted text-uppercase" style="letter-spacing:2px">Predicted</span>
+                        </div>
+                        <div class="cm-empty"></div>
+                        <div class="cm-col-label">Stay</div>
+                        <div class="cm-col-label">Churn</div>
+                        <!-- Row 1 -->
+                        <div class="cm-row-label">Stay</div>
+                        <div class="cm-cell cm-tn">
+                            <div class="cm-val">{{ cm[0][0] }}</div>
+                            <div class="cm-sublabel">True Negative</div>
+                        </div>
+                        <div class="cm-cell cm-fp">
+                            <div class="cm-val">{{ cm[0][1] }}</div>
+                            <div class="cm-sublabel">False Positive</div>
+                        </div>
+                        <!-- Row 2 -->
+                        <div class="cm-row-label">Churn</div>
+                        <div class="cm-cell cm-fn">
+                            <div class="cm-val">{{ cm[1][0] }}</div>
+                            <div class="cm-sublabel">False Negative</div>
+                        </div>
+                        <div class="cm-cell cm-tp">
+                            <div class="cm-val">{{ cm[1][1] }}</div>
+                            <div class="cm-sublabel">True Positive</div>
+                        </div>
+                    </div>
+                    <div class="cm-actual-label">Actual</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-7 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-sort-amount-down me-2"></i>Global Feature Importance (SHAP)</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container"><canvas id="shapChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ANN Architecture -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-project-diagram me-2" style="color:var(--primary-color)"></i>ANN Architecture — Deep Neural Network</h6>
+                <span class="badge" style="background:rgba(56,189,248,0.1);color:var(--primary-color);border:1px solid rgba(56,189,248,0.2)">TensorFlow / Keras</span>
+            </div>
+            <div class="card-body p-0">
+                <!-- Layer summary bar -->
+                <div class="px-4 pt-3 pb-2 d-flex gap-3 flex-wrap" style="border-bottom:1px solid rgba(255,255,255,0.06)">
+                    {% set lsum = [
+                        ('Input','10','—','#38bdf8'),
+                        ('Dense 1','32','ReLU','#a78bfa'),
+                        ('Dense 2','128','ReLU + Drop 0.2','#fbbf24'),
+                        ('Dense 3','64','ReLU + Drop 0.2','#f87171'),
+                        ('Dense 4','32','Tanh','#34d399'),
+                        ('Output','1','Sigmoid','#38bdf8')
+                    ] %}
+                    {% for lname, units, act, col in lsum %}
+                    <div class="d-flex align-items-center gap-2 py-1 px-3" style="background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.06)">
+                        <div style="width:10px;height:10px;border-radius:50%;background:{{ col }};flex-shrink:0"></div>
+                        <div>
+                            <div style="font-family:'Rajdhani';font-weight:700;font-size:0.78rem;color:{{ col }};letter-spacing:0.5px">{{ lname }}</div>
+                            <div style="font-size:0.65rem;color:var(--text-muted)">{{ units }} units · {{ act }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="ms-auto d-flex align-items-center">
+                        <span class="small text-muted">Total Parameters: <strong style="color:var(--text-main)">~22,529</strong></span>
+                    </div>
+                </div>
+
+                <!-- Network Diagram -->
+                <div class="ann-diagram-v2 p-3" id="annWrapper">
+                    <canvas id="annCanvas"></canvas>
+                    <div class="ann-layers" id="annLayers">
+                        {% set layer_defs = [
+                            ('INPUT', 10, '#60a5fa', ['Credit Score','Geography','Gender','Age','Tenure','Balance','# Products','Has Card','Is Active','Salary'], '—', '10 inputs'),
+                            ('DENSE 1', 32, '#a78bfa', [], 'ReLU', '32 neurons'),
+                            ('DENSE 2', 128, '#fbbf24', [], 'ReLU + Drop 0.2', '128 neurons'),
+                            ('DENSE 3', 64, '#f87171', [], 'ReLU + Drop 0.2', '64 neurons'),
+                            ('DENSE 4', 32, '#4ade80', [], 'Tanh', '32 neurons'),
+                            ('OUTPUT', 1, '#60a5fa', ['P(Churn)'], 'Sigmoid', '1 output')
+                        ] %}
+                        {% for lname, n_units, color, labels, act, count_label in layer_defs %}
+                        {% set show = [n_units, 10]|min %}
+                        <div class="ann-layer-v2">
+                            <div class="ann-layer-title" style="color:{{ color }}">{{ lname }}</div>
+                            <div class="ann-nodes-col" id="annL{{ loop.index0 }}">
+                                {% for i in range(show) %}
+                                <div class="ann-node-v2" style="border-color:{{ color }};box-shadow:0 0 8px {{ color }}22;background:{{ color }}0d">
+                                    {% if i < labels|length %}<span class="ann-node-label">{{ labels[i] }}</span>{% endif %}
+                                </div>
+                                {% endfor %}
+                                {% if n_units > 10 %}
+                                <div class="ann-node-more" style="color:{{ color }}">+{{ n_units - 10 }} more</div>
+                                {% endif %}
+                            </div>
+                            <div class="ann-layer-info">
+                                <div class="ali-units" style="color:{{ color }}">{{ count_label }}</div>
+                                <div class="ali-act">{{ act }}</div>
+                            </div>
+                        </div>
+                        {% if not loop.last %}
+                        <div class="ann-layer-gap">
+                            <div class="ann-arrow-col">
+                                <div class="ann-conn-count" style="color:{{ color }}">
+                                    {% if loop.index0 == 0 %}10×32<div style="font-size:0.58rem;opacity:0.6">320w</div>
+                                    {% elif loop.index0 == 1 %}32×128<div style="font-size:0.58rem;opacity:0.6">4,096w</div>
+                                    {% elif loop.index0 == 2 %}128×64<div style="font-size:0.58rem;opacity:0.6">8,192w</div>
+                                    {% elif loop.index0 == 3 %}64×32<div style="font-size:0.58rem;opacity:0.6">2,048w</div>
+                                    {% elif loop.index0 == 4 %}32×1<div style="font-size:0.58rem;opacity:0.6">32w</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Architecture notes -->
+                <div class="px-4 pb-3 pt-0">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="p-3" style="background:rgba(56,189,248,0.04);border-radius:6px;border:1px solid rgba(56,189,248,0.12)">
+                                <div style="font-family:'Rajdhani';font-size:0.72rem;letter-spacing:2px;color:var(--primary-color);margin-bottom:4px">LOSS FUNCTION</div>
+                                <div style="color:var(--text-main);font-size:0.88rem;font-weight:600">Binary Cross-Entropy</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3" style="background:rgba(167,139,250,0.04);border-radius:6px;border:1px solid rgba(167,139,250,0.12)">
+                                <div style="font-family:'Rajdhani';font-size:0.72rem;letter-spacing:2px;color:var(--secondary-color);margin-bottom:4px">OPTIMIZER</div>
+                                <div style="color:var(--text-main);font-size:0.88rem;font-weight:600">Adam (lr=0.001)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3" style="background:rgba(251,191,36,0.04);border-radius:6px;border:1px solid rgba(251,191,36,0.12)">
+                                <div style="font-family:'Rajdhani';font-size:0.72rem;letter-spacing:2px;color:var(--warning-color);margin-bottom:4px">REGULARIZATION</div>
+                                <div style="color:var(--text-main);font-size:0.88rem;font-weight:600">Dropout (20%)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3" style="background:rgba(52,211,153,0.04);border-radius:6px;border:1px solid rgba(52,211,153,0.12)">
+                                <div style="font-family:'Rajdhani';font-size:0.72rem;letter-spacing:2px;color:var(--success-color);margin-bottom:4px">PREPROCESSING</div>
+                                <div style="color:var(--text-main);font-size:0.88rem;font-weight:600">MinMaxScaler [0,1]</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cm-grid {
+    display: grid;
+    grid-template-columns: 60px 140px 140px;
+    grid-template-rows: 28px 28px 120px 120px;
+    gap: 4px;
+    position: relative;
+}
+.cm-empty { }
+.cm-header { display: flex; align-items: center; justify-content: center; grid-column: 2 / 4; }
+.cm-col-label { display: flex; align-items: center; justify-content: center;
+    font-family:'Rajdhani';font-weight:700;letter-spacing:1px;color:#6b7280;font-size:0.85rem; }
+.cm-row-label { display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+    font-family:'Rajdhani';font-weight:700;letter-spacing:1px;color:#6b7280;font-size:0.85rem; }
+.cm-cell { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 8px; gap: 4px; }
+.cm-tn { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2); }
+.cm-fp { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); }
+.cm-fn { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); }
+.cm-tp { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2); }
+.cm-val { font-family:'Rajdhani'; font-size:2.2rem; font-weight:800; color:#e2e8f0; line-height:1; }
+.cm-sublabel { font-size:0.65rem; color:#6b7280; text-transform:uppercase; letter-spacing:1px; }
+.cm-actual-label { position:absolute; left:-30px; top:50%; transform:translateY(-50%) rotate(-90deg);
+    font-size:0.8rem; color:#6b7280; text-transform:uppercase; letter-spacing:2px; white-space:nowrap; }
+.confusion-matrix-wrap { position: relative; padding-left: 20px; }
+
+/* ANN Diagram V2 */
+.ann-diagram-v2 {
+    position: relative;
+    overflow-x: auto;
+    min-height: 520px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+#annCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+}
+.ann-layers {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    z-index: 1;
+    position: relative;
+    padding: 24px 10px;
+    flex-wrap: nowrap;
+    min-width: 900px;
+    width: 100%;
+}
+.ann-layer-v2 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 110px;
+    flex: 1;
+    max-width: 140px;
+    padding: 0 4px;
+}
+.ann-layer-title {
+    font-family: 'Rajdhani';
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    text-align: center;
+}
+.ann-nodes-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.ann-node-v2 {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: default;
+    transition: transform 0.2s, box-shadow 0.3s;
+    animation: nodePulse 4s ease-in-out infinite;
+}
+.ann-node-v2:nth-child(even) { animation-delay: -2s; }
+.ann-node-v2:nth-child(3n) { animation-delay: -1.2s; }
+@keyframes nodePulse {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+}
+.ann-node-v2:hover {
+    transform: scale(1.25);
+    animation: none;
+    opacity: 1;
+    z-index: 10;
+}
+.ann-node-label {
+    font-size: 0.42rem;
+    color: rgba(255,255,255,0.75);
+    text-align: center;
+    padding: 2px;
+    line-height: 1.2;
+    max-width: 40px;
+}
+.ann-node-more {
+    font-family: 'Rajdhani';
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
+}
+.ann-layer-info {
+    margin-top: 14px;
+    text-align: center;
+}
+.ali-units {
+    font-family: 'Rajdhani';
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+.ali-act {
+    font-size: 0.65rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 2px;
+}
+.ann-layer-gap {
+    width: 60px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ann-arrow-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.ann-conn-count {
+    font-family: 'Rajdhani';
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.5px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 4px;
+    padding: 4px 6px;
+    min-width: 48px;
+    line-height: 1.3;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const T={backgroundColor:'rgba(17,24,39,0.97)',titleColor:'#e2e8f0',bodyColor:'#94a3b8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:6};
+const rocData={{ roc_data|tojson }}, prData={{ pr_data|tojson }}, shapData={{ shap_importance|tojson }};
+
+new Chart(document.getElementById('rocChart'),{type:'line',data:{
+    labels:rocData.fpr.map(v=>v.toFixed(2)),
+    datasets:[
+        {label:'ROC Curve',data:rocData.tpr,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,0.05)',fill:true,tension:0.3,pointRadius:0,borderWidth:2},
+        {label:'Random (baseline)',data:rocData.fpr,borderColor:'rgba(255,255,255,0.12)',borderDash:[6,4],pointRadius:0,fill:false,borderWidth:1}
+    ]},
+    options:{maintainAspectRatio:false,scales:{
+        x:{title:{display:true,text:'False Positive Rate',color:'#6b7280'},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280'}},
+        y:{title:{display:true,text:'True Positive Rate',color:'#6b7280'},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280'}}
+    },plugins:{legend:{position:'top',labels:{color:'#e2e8f0',usePointStyle:true}},tooltip:T}}
+});
+
+new Chart(document.getElementById('prChart'),{type:'line',data:{
+    labels:prData.recall.map(v=>v.toFixed(2)),
+    datasets:[{label:'Precision-Recall',data:prData.precision,borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.05)',fill:true,tension:0.3,pointRadius:0,borderWidth:2}]},
+    options:{maintainAspectRatio:false,scales:{
+        x:{title:{display:true,text:'Recall',color:'#6b7280'},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280'}},
+        y:{title:{display:true,text:'Precision',color:'#6b7280'},beginAtZero:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280'}}
+    },plugins:{legend:{position:'top',labels:{color:'#e2e8f0',usePointStyle:true}},tooltip:T}}
+});
+
+const shapLabels=shapData.map(d=>d.feature);
+const shapVals=shapData.map(d=>d.importance);
+const shapColors=shapVals.map((v,i)=>{
+    const t=i/(shapVals.length-1||1);
+    const r=Math.round(96+t*(167-96)), g=Math.round(165+t*(139-165)), b=Math.round(250+t*(250-250));
+    return `rgba(${r},${g},${b},0.65)`;
+});
+new Chart(document.getElementById('shapChart'),{type:'bar',data:{
+    labels:shapLabels,
+    datasets:[{label:'Mean |SHAP|',data:shapVals,backgroundColor:shapColors,borderColor:shapColors.map(c=>c.replace('0.65','0.9')),borderWidth:1,borderRadius:5}]},
+    options:{maintainAspectRatio:false,indexAxis:'y',
+        scales:{x:{beginAtZero:true,title:{display:true,text:'Mean |SHAP Value|',color:'#6b7280'},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280'}},
+            y:{grid:{display:false},ticks:{color:'#e2e8f0'}}},
+        plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` Importance: ${c.raw}`}}}}
+});
+
+// ANN Connection Canvas
+function drawANNConnections() {
+    const canvas = document.getElementById('annCanvas');
+    const wrapper = document.getElementById('annWrapper');
+    if (!canvas || !wrapper) return;
+    canvas.width = wrapper.offsetWidth;
+    canvas.height = wrapper.offsetHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const layerColors = ['#60a5fa','#a78bfa','#fbbf24','#f87171','#4ade80','#60a5fa'];
+    const layerEls = document.querySelectorAll('.ann-layer-v2');
+    const wRect = wrapper.getBoundingClientRect();
+
+    for (let i = 0; i < layerEls.length - 1; i++) {
+        const nodesA = layerEls[i].querySelectorAll('.ann-node-v2');
+        const nodesB = layerEls[i+1].querySelectorAll('.ann-node-v2');
+        if (!nodesA.length || !nodesB.length) continue;
+
+        nodesA.forEach(na => {
+            const rA = na.getBoundingClientRect();
+            const x1 = rA.right - wRect.left;
+            const y1 = rA.top + rA.height/2 - wRect.top;
+            nodesB.forEach(nb => {
+                const rB = nb.getBoundingClientRect();
+                const x2 = rB.left - wRect.left;
+                const y2 = rB.top + rB.height/2 - wRect.top;
+                const cx = (x1+x2)/2;
+                const grad = ctx.createLinearGradient(x1,y1,x2,y2);
+                grad.addColorStop(0, layerColors[i]+'22');
+                grad.addColorStop(1, layerColors[i+1]+'22');
+                ctx.beginPath();
+                ctx.moveTo(x1,y1);
+                ctx.bezierCurveTo(cx,y1,cx,y2,x2,y2);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 0.7;
+                ctx.stroke();
+            });
+        });
+    }
+}
+
+window.addEventListener('load', () => setTimeout(drawANNConnections, 400));
+window.addEventListener('resize', () => setTimeout(drawANNConnections, 150));
+</script>
+{% endblock %}

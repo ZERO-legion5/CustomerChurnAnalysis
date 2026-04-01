@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<div class="home-hero fade-in">
+    <div class="hero-bg-glow"></div>
+    <div class="hero-content text-center">
+        <div class="hero-badge mb-3">
+            <i class="fas fa-shield-alt me-2"></i>AI-POWERED CUSTOMER INTELLIGENCE
+        </div>
+        <h1 class="hero-title">CHURN<span class="hero-title-accent">GUARD</span></h1>
+        <p class="hero-subtitle">Predict customer churn, understand behaviour, and deliver<br>AI-generated retention strategies — before it's too late.</p>
+
+        <div class="hero-stats row justify-content-center g-3 my-4">
+            <div class="col-auto">
+                <div class="hero-stat-box">
+                    <div class="hero-stat-val">{{ stats.total | int | string }}+</div>
+                    <div class="hero-stat-lbl">Customers Analysed</div>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="hero-stat-box" style="--accent:#f87171">
+                    <div class="hero-stat-val" style="color:#f87171">{{ stats.churn_rate }}%</div>
+                    <div class="hero-stat-lbl">Observed Churn Rate</div>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="hero-stat-box" style="--accent:#34d399">
+                    <div class="hero-stat-val" style="color:#34d399">${{ stats.avg_balance }}</div>
+                    <div class="hero-stat-lbl">Avg. Customer Balance</div>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="hero-stat-box" style="--accent:#a78bfa">
+                    <div class="hero-stat-val" style="color:#a78bfa">{{ stats.avg_score | int }}</div>
+                    <div class="hero-stat-lbl">Avg. Credit Score</div>
+                </div>
+            </div>
+        </div>
+
+        <a href="/predict" class="btn btn-primary btn-lg px-5 me-3">
+            <i class="fas fa-bolt me-2"></i>Run Prediction
+        </a>
+        <a href="/dashboard" class="btn btn-outline-primary btn-lg px-5">
+            <i class="fas fa-chart-line me-2"></i>View Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Feature Grid -->
+<div class="row g-4 mt-2 fade-in">
+    <div class="col-12">
+        <h4 class="section-label"><span>Platform Modules</span></h4>
+    </div>
+
+    <!-- Predict -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/predict" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#38bdf8"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#38bdf8;background:rgba(56,189,248,0.1)">
+                    <i class="fas fa-user-check fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#38bdf8">Churn Predictor</h5>
+                <p class="feature-desc">Enter customer attributes and get an instant churn probability, SHAP explanation, persona classification, and a Gemini-powered retention strategy.</p>
+                <div class="feature-tags">
+                    <span class="ftag">ANN Model</span>
+                    <span class="ftag">SHAP XAI</span>
+                    <span class="ftag">Gemini AI</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/dashboard" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#34d399"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#34d399;background:rgba(52,211,153,0.1)">
+                    <i class="fas fa-chart-bar fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#34d399">Analytics Dashboard</h5>
+                <p class="feature-desc">Full dataset analytics with KPI cards and 9+ interactive charts covering geography, demography, product usage, and balance distribution.</p>
+                <div class="feature-tags">
+                    <span class="ftag" style="border-color:rgba(52,211,153,0.4);color:#34d399">9 Charts</span>
+                    <span class="ftag" style="border-color:rgba(52,211,153,0.4);color:#34d399">KPI Cards</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Model Intelligence -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/model" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#a78bfa"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#a78bfa;background:rgba(167,139,250,0.1)">
+                    <i class="fas fa-brain fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#a78bfa">Model Intelligence</h5>
+                <p class="feature-desc">Deep dive into the ANN model — ROC curves, Precision-Recall analysis, confusion matrix, global SHAP feature importance, and architecture diagram.</p>
+                <div class="feature-tags">
+                    <span class="ftag" style="border-color:rgba(167,139,250,0.4);color:#a78bfa">ROC / PR</span>
+                    <span class="ftag" style="border-color:rgba(167,139,250,0.4);color:#a78bfa">Confusion Matrix</span>
+                    <span class="ftag" style="border-color:rgba(167,139,250,0.4);color:#a78bfa">SHAP Global</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- EDA Insights -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/insights" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#fbbf24"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#fbbf24;background:rgba(251,191,36,0.1)">
+                    <i class="fas fa-microscope fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#fbbf24">Data Insights (EDA)</h5>
+                <p class="feature-desc">Exploratory analysis of the dataset — correlation heatmap, feature distributions, descriptive statistics, and 6 actionable business findings.</p>
+                <div class="feature-tags">
+                    <span class="ftag" style="border-color:rgba(251,191,36,0.4);color:#fbbf24">Heatmap</span>
+                    <span class="ftag" style="border-color:rgba(251,191,36,0.4);color:#fbbf24">Distributions</span>
+                    <span class="ftag" style="border-color:rgba(251,191,36,0.4);color:#fbbf24">Stats</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Personas -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/personas" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#f87171"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#f87171;background:rgba(248,113,113,0.1)">
+                    <i class="fas fa-users fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#f87171">Customer Personas</h5>
+                <p class="feature-desc">K-Means clustering segments customers into 4 named personas — Dormant Affluents, Young Transients, Loyal Core, and High-Value Actives — with 3D visualisation.</p>
+                <div class="feature-tags">
+                    <span class="ftag" style="border-color:rgba(248,113,113,0.4);color:#f87171">K-Means</span>
+                    <span class="ftag" style="border-color:rgba(248,113,113,0.4);color:#f87171">4 Segments</span>
+                    <span class="ftag" style="border-color:rgba(248,113,113,0.4);color:#f87171">3D Plot</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Segment Intelligence -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/segments" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#f59e0b"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#f59e0b;background:rgba(245,158,11,0.1)">
+                    <i class="fas fa-layer-group fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#f59e0b">Segment Intelligence</h5>
+                <p class="feature-desc">Compare churn rates across customer cohorts — by geography, activity, product count, and credit band — and generate AI-powered retention playbooks per segment.</p>
+                <div class="feature-tags">
+                    <span class="ftag" style="border-color:rgba(245,158,11,0.4);color:#f59e0b">Cohort Analysis</span>
+                    <span class="ftag" style="border-color:rgba(245,158,11,0.4);color:#f59e0b">AI Playbook</span>
+                    <span class="ftag" style="border-color:rgba(245,158,11,0.4);color:#f59e0b">Live Filters</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- What-If Lab -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/lab" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#38bdf8"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#38bdf8;background:rgba(56,189,248,0.1)">
+                    <i class="fas fa-flask fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#38bdf8">What-If Lab</h5>
+                <p class="feature-desc">Interactive sliders let you modify any customer attribute in real-time and instantly see how churn probability changes — ideal for testing retention interventions.</p>
+                <div class="feature-tags">
+                    <span class="ftag">Live Sliders</span>
+                    <span class="ftag">Scenario Testing</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- History -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/history" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#34d399"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#34d399;background:rgba(52,211,153,0.1)">
+                    <i class="fas fa-history fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#34d399">Strategy History</h5>
+                <p class="feature-desc">Browse all previously generated retention strategies, filter by churn outcome, and manage saved customer intelligence records.</p>
+                <div class="feature-tags">
+                    <span class="ftag" style="border-color:rgba(52,211,153,0.4);color:#34d399">SQLite</span>
+                    <span class="ftag" style="border-color:rgba(52,211,153,0.4);color:#34d399">Filter & Search</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- AI Chat -->
+    <div class="col-xl-4 col-md-6">
+        <a href="/chat" class="feature-card card h-100 text-decoration-none">
+            <div class="feature-card-glow" style="--fc:#a78bfa"></div>
+            <div class="card-body p-4">
+                <div class="feature-icon mb-3" style="color:#a78bfa;background:rgba(167,139,250,0.1)">
+                    <i class="fas fa-comments fa-xl"></i>
+                </div>
+                <h5 class="feature-title" style="color:#a78bfa">AI Analyst Chat</h5>
+                <p class="feature-desc">Ask natural language questions about the dataset, churn trends, or business strategy. Powered by Google Gemini with full dataset context injected.</p>
+                <div class="feature-tags">
+                    <span class="ftag" style="border-color:rgba(167,139,250,0.4);color:#a78bfa">Gemini 2.0</span>
+                    <span class="ftag" style="border-color:rgba(167,139,250,0.4);color:#a78bfa">Context-Aware</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+</div>
+
+<!-- Tech Stack Footer -->
+<div class="row fade-in mt-5">
+    <div class="col-12">
+        <div class="tech-stack-bar">
+            <span class="ts-label">BUILT WITH</span>
+            <span class="ts-item"><i class="fas fa-circle me-1"></i>TensorFlow / Keras ANN</span>
+            <span class="ts-item"><i class="fas fa-circle me-1"></i>SHAP Explainability</span>
+            <span class="ts-item"><i class="fas fa-circle me-1"></i>Google Gemini 2.0 Flash</span>
+            <span class="ts-item"><i class="fas fa-circle me-1"></i>Flask & SQLite</span>
+            <span class="ts-item"><i class="fas fa-circle me-1"></i>K-Means Clustering</span>
+            <span class="ts-item"><i class="fas fa-circle me-1"></i>scikit-learn</span>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

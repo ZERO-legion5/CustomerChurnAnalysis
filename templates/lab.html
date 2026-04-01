@@ -63,14 +63,26 @@
         border: 1px solid var(--primary-color) !important;
         box-shadow: 0 0 15px rgba(0, 243, 255, 0.4) !important;
     }
+    .shap-legend { font-size: 0.75rem; color: var(--text-muted); }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block content %}
+<!-- Page Banner -->
+<div class="page-banner fade-in mb-4" style="border-left-color:var(--success-color);background:linear-gradient(90deg,rgba(52,211,153,0.04) 0%,rgba(13,17,23,0) 100%)">
+    <div class="page-banner-icon" style="background:rgba(52,211,153,0.1);border-color:rgba(52,211,153,0.25);color:var(--success-color)">
+        <i class="fas fa-flask"></i>
+    </div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title">What-If Simulator</div>
+        <p class="page-banner-sub">Adjust customer parameters in real-time and observe how churn probability changes</p>
+    </div>
+    <span class="badge d-none d-md-inline-flex px-3 py-2" style="background:rgba(52,211,153,0.1);color:var(--success-color);border:1px solid rgba(52,211,153,0.2)"><i class="fas fa-sliders-h me-1"></i>Live ANN</span>
+</div>
 <div class="row fade-in">
     <div class="col-12 mb-4">
-        <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary" style="position: relative; z-index: 1050;">
-            <h2 class="h3 mb-0 text-primary"><i class="fas fa-flask me-2"></i>Retention Lab: What-If Simulator</h2>
+        <div class="d-flex justify-content-end align-items-center">
             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     Load Preset Profile
@@ -158,9 +170,20 @@
                             </div>
                         </div>
                         
-                        <!-- Hidden fixed gender for simplicity in simulator or add it -->
-                        <input type="hidden" name="Gender" value="Male">
-                        <input type="hidden" name="EstimatedSalary" value="75000">
+                        <div class="col-md-6">
+                            <label class="form-label">Gender</label>
+                            <select name="Gender" class="form-select sim-input">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="slider-label">
+                                <label class="form-label">Estimated Salary ($)</label>
+                                <span class="slider-val" id="val-EstimatedSalary">75000</span>
+                            </div>
+                            <input type="range" name="EstimatedSalary" min="10000" max="250000" step="1000" value="75000" class="sim-input">
+                        </div>
                     </div>
                 </form>
             </div>
@@ -205,6 +228,24 @@
         </div>
     </div>
 </div>
+
+<!-- Live SHAP Feature Influence Chart -->
+<div class="row fade-in mt-2" id="shapChartRow" style="display:none">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-chart-bar me-2 text-warning"></i>Live SHAP Feature Influence</h6>
+                <div class="shap-legend d-flex gap-3">
+                    <span><span style="display:inline-block;width:12px;height:12px;background:rgba(248,113,113,0.8);border-radius:2px;margin-right:4px"></span>Increases Risk</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;background:rgba(74,222,128,0.8);border-radius:2px;margin-right:4px"></span>Reduces Risk</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="shapBarChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -212,9 +253,9 @@
     const simulatorForm = document.getElementById('simulatorForm');
     const simInputs = document.querySelectorAll('.sim-input');
     const presets = {
-        avg: { Age: 40, Geography: 'France', Balance: 50000, CreditScore: 650, Tenure: 5, NumOfProducts: 1, IsActiveMember: true, HasCrCard: true },
-        high_risk: { Age: 50, Geography: 'Germany', Balance: 120000, CreditScore: 580, Tenure: 2, NumOfProducts: 3, IsActiveMember: false, HasCrCard: true },
-        loyal: { Age: 35, Geography: 'Spain', Balance: 10000, CreditScore: 750, Tenure: 8, NumOfProducts: 2, IsActiveMember: true, HasCrCard: true }
+        avg:       { Age: 40, Geography: 'France',  Balance: 50000,  CreditScore: 650, Tenure: 5, NumOfProducts: 1, IsActiveMember: true,  HasCrCard: true,  Gender: 'Male',   EstimatedSalary: 75000  },
+        high_risk: { Age: 50, Geography: 'Germany', Balance: 120000, CreditScore: 580, Tenure: 2, NumOfProducts: 3, IsActiveMember: false, HasCrCard: true,  Gender: 'Female', EstimatedSalary: 55000  },
+        loyal:     { Age: 35, Geography: 'Spain',   Balance: 10000,  CreditScore: 750, Tenure: 8, NumOfProducts: 2, IsActiveMember: true,  HasCrCard: true,  Gender: 'Male',   EstimatedSalary: 110000 }
     };
 
     // Update value labels
@@ -322,8 +363,8 @@
         personaMatch.textContent = personaNames[data.cluster_id] || `Cluster ${data.cluster_id}`;
         
         if (prob > 70) {
-            gauge.style.color = '#ff003c';
-            gauge.style.textShadow = '0 0 20px #ff003c, 0 0 40px rgba(255, 0, 60, 0.5)';
+            gauge.style.color = '#f87171';
+            gauge.style.textShadow = 'none';
             status.className = 'badge bg-danger p-3 w-100 fs-5 mb-4';
             status.textContent = 'CRITICAL RISK';
         } else if (prob > 40) {
@@ -332,8 +373,8 @@
             status.className = 'badge bg-warning p-3 w-100 fs-5 mb-4 text-dark';
             status.textContent = 'MONITOR CLOSELY';
         } else {
-            gauge.style.color = '#0aff60';
-            gauge.style.textShadow = '0 0 20px #0aff60, 0 0 40px rgba(10, 255, 96, 0.5)';
+            gauge.style.color = '#4ade80';
+            gauge.style.textShadow = 'none';
             status.className = 'badge bg-success p-3 w-100 fs-5 mb-4';
             status.textContent = 'STABLE CUSTOMER';
         }
@@ -361,6 +402,45 @@
                 winningAction.textContent = `Focus on mitigating the impact of ${worstAction.feature}.`;
             }
         }
+        renderShapChart(data.explanations);
+    }
+
+    let shapChartInstance = null;
+    function renderShapChart(explanations) {
+        const row = document.getElementById('shapChartRow');
+        row.style.display = 'block';
+        const sorted = [...explanations].sort((a, b) => b.influence - a.influence);
+        const labels  = sorted.map(e => e.feature);
+        const values  = sorted.map(e => e.influence);
+        const bgColors = values.map(v => v > 0 ? 'rgba(248,113,113,0.75)' : 'rgba(74,222,128,0.75)');
+        if (shapChartInstance) { shapChartInstance.destroy(); shapChartInstance = null; }
+        const ctx = document.getElementById('shapBarChart').getContext('2d');
+        shapChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'SHAP Influence',
+                    data: values,
+                    backgroundColor: bgColors,
+                    borderColor: bgColors,
+                    borderWidth: 1,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.raw > 0 ? '+' : ''}${ctx.raw.toFixed(4)}` } }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b9bb4' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#d1d5db' } }
+                }
+            }
+        });
     }
 
     // Initial run

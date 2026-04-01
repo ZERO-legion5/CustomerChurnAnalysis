@@ -5,210 +5,168 @@
 {% endblock %}
 
 {% block content %}
-<div class="row fade-in mb-4">
-    <div class="col-12">
-        <h2 class="h3 mb-0 text-primary pb-2" style="border-bottom: 1px solid rgba(0,243,255,0.3);">Analytics Dashboard</h2>
+<div class="page-banner fade-in mb-4">
+    <div class="page-banner-icon"><i class="fas fa-chart-bar"></i></div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title">Analytics Dashboard</div>
+        <p class="page-banner-sub">Real-time behavioural insights across 10,000 bank customer records</p>
+    </div>
+    <div class="d-none d-md-flex gap-3">
+        <div class="text-center px-3 py-2" style="border-left:1px solid rgba(255,255,255,0.06)">
+            <div style="font-family:'Rajdhani';font-size:1.3rem;font-weight:700;color:var(--primary-color)">{{ total_customers }}</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Records</div>
+        </div>
+        <div class="text-center px-3 py-2" style="border-left:1px solid rgba(255,255,255,0.06)">
+            <div style="font-family:'Rajdhani';font-size:1.3rem;font-weight:700;color:var(--danger-color)">{{ churn_rate }}%</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Churn Rate</div>
+        </div>
     </div>
 </div>
 
-<div class="row fade-in">
-    <!-- Geography Chart -->
-    <div class="col-xl-4 col-lg-5 mb-4">
-        <div class="card shadow h-100">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold">Churn by Geography</h6>
+<!-- KPI Cards -->
+<div class="row fade-in g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="color:#60a5fa;background:rgba(96,165,250,0.1)"><i class="fas fa-users fa-lg"></i></div>
+                <div><div class="kpi-value">{{ total_customers }}</div><div class="kpi-label">Total Customers</div></div>
             </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="geoChart"></canvas>
-                </div>
-            </div>
+            <div class="kpi-bar" style="background:linear-gradient(90deg,#60a5fa,transparent)"></div>
         </div>
     </div>
-
-    <!-- Balance Chart -->
-    <div class="col-xl-8 col-lg-7 mb-4">
-        <div class="card shadow h-100">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold">Average Balance Comparison</h6>
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="color:#f87171;background:rgba(248,113,113,0.1)"><i class="fas fa-sign-out-alt fa-lg"></i></div>
+                <div><div class="kpi-value" style="color:#f87171">{{ churn_rate }}%</div><div class="kpi-label">Overall Churn Rate</div></div>
             </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="balanceChart"></canvas>
-                </div>
-            </div>
+            <div class="kpi-bar" style="background:linear-gradient(90deg,#f87171,transparent)"></div>
         </div>
     </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="color:#4ade80;background:rgba(74,222,128,0.1)"><i class="fas fa-wallet fa-lg"></i></div>
+                <div><div class="kpi-value" style="color:#4ade80">${{ "{:,.0f}".format(avg_balance) }}</div><div class="kpi-label">Avg Account Balance</div></div>
+            </div>
+            <div class="kpi-bar" style="background:linear-gradient(90deg,#4ade80,transparent)"></div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="color:#a78bfa;background:rgba(167,139,250,0.1)"><i class="fas fa-star fa-lg"></i></div>
+                <div><div class="kpi-value" style="color:#a78bfa">{{ avg_credit_score }}</div><div class="kpi-label">Avg Credit Score</div></div>
+            </div>
+            <div class="kpi-bar" style="background:linear-gradient(90deg,#a78bfa,transparent)"></div>
+        </div>
+    </div>
+</div>
 
-    <!-- Age Distribution Chart -->
-    <div class="col-12 mb-4">
+<div class="row fade-in g-3 mb-3">
+    <div class="col-xl-4 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-globe me-2"></i>Churn Rate by Geography</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="geoChart"></canvas></div></div>
+        </div>
+    </div>
+    <div class="col-xl-4 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-venus-mars me-2"></i>Churn Rate by Gender</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="genderChart"></canvas></div></div>
+        </div>
+    </div>
+    <div class="col-xl-4 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-bolt me-2"></i>Active vs Inactive Members</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="activeChart"></canvas></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row fade-in g-3 mb-3">
+    <div class="col-12 mb-3">
+        <div class="card shadow">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-chart-area me-2"></i>Age Distribution — Churn vs Retained</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="ageChart"></canvas></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row fade-in g-3 mb-3">
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-box me-2"></i>Churn Rate by Number of Products</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="productsChart"></canvas></div></div>
+        </div>
+    </div>
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-clock me-2"></i>Churn Rate by Tenure (Years)</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="tenureChart"></canvas></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row fade-in g-3 mb-3">
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-balance-scale me-2"></i>Avg Balance: Churned vs Retained</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="balanceChart"></canvas></div></div>
+        </div>
+    </div>
+    <div class="col-xl-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-star-half-alt me-2"></i>Churn Rate by Credit Score Band</h6></div>
+            <div class="card-body"><div class="chart-container"><canvas id="creditChart"></canvas></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row fade-in g-3 mb-3">
+    <div class="col-12">
         <div class="card shadow">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold">Age Distribution (Churn vs Stay)</h6>
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-globe me-2" style="color:var(--secondary-color)"></i>Churn Rate by Geography &amp; Gender</h6>
+                <small class="text-muted">Cross-segment analysis revealing which country-gender combinations face highest churn pressure</small>
             </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="ageChart"></canvas>
-                </div>
-            </div>
+            <div class="card-body"><div class="chart-container"><canvas id="geoGenderChart"></canvas></div></div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Set Global Chart Defaults for Dark Theme
-    Chart.defaults.color = '#8b9bb4';
-    Chart.defaults.font.family = "'Rajdhani', sans-serif";
-    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.05)';
-    
-    // Data from Flask
-    const geoData = {{ geo_stats | tojson }};
-    const balanceData = {{ balance_stats | tojson }};
-    const ageChurn = {{ age_churn | tojson }};
-    const ageStay = {{ age_stay | tojson }};
+Chart.defaults.color='#6b7280';Chart.defaults.font.family="'Nunito',sans-serif";Chart.defaults.borderColor='rgba(255,255,255,0.05)';
+const T={backgroundColor:'rgba(17,24,39,0.97)',titleColor:'#e2e8f0',bodyColor:'#94a3b8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:6};
+const geoData={{ geo_stats|tojson }},balData={{ balance_stats|tojson }},ageChurn={{ age_churn|tojson }},ageStay={{ age_stay|tojson }};
+const genderData={{ gender_churn|tojson }},prodData={{ products_churn|tojson }},tenureData={{ tenure_churn|tojson }};
+const activeData={{ active_churn|tojson }},creditData={{ credit_churn|tojson }};
 
-    // 1. Geography Chart (Doughnut)
-    const ctxGeo = document.getElementById('geoChart').getContext('2d');
-    new Chart(ctxGeo, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(geoData),
-            datasets: [{
-                data: Object.values(geoData).map(v => (v * 100).toFixed(1)), // Convert to %
-                backgroundColor: ['#00f3ff', '#0aff60', '#bc13fe'],
-                borderColor: '#0d0e15',
-                borderWidth: 2,
-                hoverOffset: 10
-            }],
-        },
-        options: {
-            maintainAspectRatio: false,
-            plugins: {
-                tooltip: { 
-                    callbacks: { label: (c) => ` Churn Rate: ${c.raw}%` },
-                    backgroundColor: 'rgba(5, 5, 8, 0.9)',
-                    titleColor: '#00f3ff',
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 243, 255, 0.3)'
-                },
-                legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
-            },
-        }
-    });
+new Chart(document.getElementById('geoChart'),{type:'doughnut',data:{labels:Object.keys(geoData),datasets:[{data:Object.values(geoData).map(v=>(v*100).toFixed(1)),backgroundColor:['#60a5fa','#4ade80','#a78bfa'],borderColor:'#111827',borderWidth:3,hoverOffset:8}]},options:{maintainAspectRatio:false,plugins:{tooltip:{...T,callbacks:{label:c=>` Churn: ${c.raw}%`}},legend:{position:'bottom',labels:{usePointStyle:true,padding:16,color:'#e2e8f0'}}}}});
+new Chart(document.getElementById('genderChart'),{type:'bar',data:{labels:Object.keys(genderData),datasets:[{data:Object.values(genderData).map(v=>(v*100).toFixed(1)),backgroundColor:['rgba(96,165,250,0.5)','rgba(167,139,250,0.5)'],borderColor:['#60a5fa','#a78bfa'],borderWidth:1,borderRadius:5,barPercentage:0.5}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false},ticks:{color:'#e2e8f0'}}},plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` ${c.raw}%`}}}}});
+const aV=[(activeData['1']||0),(activeData['0']||0)].map(v=>parseFloat((v*100).toFixed(1)));
+new Chart(document.getElementById('activeChart'),{type:'doughnut',data:{labels:['Active Members','Inactive Members'],datasets:[{data:aV,backgroundColor:['rgba(74,222,128,0.65)','rgba(248,113,113,0.65)'],borderColor:['#4ade80','#f87171'],borderWidth:2,hoverOffset:8}]},options:{maintainAspectRatio:false,plugins:{tooltip:{...T,callbacks:{label:c=>` Churn Rate: ${c.raw}%`}},legend:{position:'bottom',labels:{usePointStyle:true,padding:16,color:'#e2e8f0'}}}}});
+function hist(data,bs,mn,mx){const b={};for(let i=mn;i<=mx;i+=bs)b[i]=0;data.forEach(a=>{for(let k in b){if(a>=parseInt(k)&&a<parseInt(k)+bs){b[k]++;break;}}});return b;}
+const cb=hist(ageChurn,5,18,90),sb=hist(ageStay,5,18,90);
+new Chart(document.getElementById('ageChart'),{type:'line',data:{labels:Object.keys(cb).map(b=>`${b}-${parseInt(b)+4}`),datasets:[{label:'Churned',data:Object.values(cb),borderColor:'#f87171',backgroundColor:'rgba(248,113,113,0.06)',fill:true,tension:0.4,pointRadius:3},{label:'Retained',data:Object.values(sb),borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,0.06)',fill:true,tension:0.4,pointRadius:3}]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,title:{display:true,text:'Customers',color:'#6b7280'},grid:{color:'rgba(255,255,255,0.04)'}},x:{title:{display:true,text:'Age Group',color:'#6b7280'},grid:{display:false}}},plugins:{legend:{position:'top',labels:{color:'#e2e8f0',usePointStyle:true}},tooltip:T}}});
+new Chart(document.getElementById('productsChart'),{type:'bar',data:{labels:Object.keys(prodData).map(k=>`${k} Product${k>1?'s':''}`),datasets:[{data:Object.values(prodData).map(v=>(v*100).toFixed(1)),backgroundColor:['rgba(96,165,250,0.5)','rgba(74,222,128,0.5)','rgba(248,113,113,0.5)','rgba(248,113,113,0.8)'],borderColor:['#60a5fa','#4ade80','#f87171','#f87171'],borderWidth:1,borderRadius:5,barPercentage:0.6}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` Churn Rate: ${c.raw}%`}}}}});
+new Chart(document.getElementById('tenureChart'),{type:'line',data:{labels:Object.keys(tenureData).map(k=>`Year ${k}`),datasets:[{label:'Churn Rate',data:Object.values(tenureData).map(v=>(v*100).toFixed(1)),borderColor:'#fbbf24',backgroundColor:'rgba(251,191,36,0.06)',fill:true,tension:0.4,pointBackgroundColor:'#fbbf24',pointRadius:4}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` ${c.raw}%`}}}}});
+new Chart(document.getElementById('balanceChart'),{type:'bar',data:{labels:Object.keys(balData),datasets:[{data:Object.values(balData),backgroundColor:['rgba(248,113,113,0.5)','rgba(74,222,128,0.5)'],borderColor:['#f87171','#4ade80'],borderWidth:1,borderRadius:5,barPercentage:0.5}]},options:{maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{display:false},ticks:{color:'#e2e8f0'}}},plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` $${Number(c.raw).toLocaleString('en-US',{minimumFractionDigits:2})}`}}}}});
+new Chart(document.getElementById('creditChart'),{type:'bar',data:{labels:Object.keys(creditData),datasets:[{data:Object.values(creditData).map(v=>(v*100).toFixed(1)),backgroundColor:'rgba(167,139,250,0.5)',borderColor:'#a78bfa',borderWidth:1,borderRadius:5,barPercentage:0.7}]},options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{...T,callbacks:{label:c=>` Churn Rate: ${c.raw}%`}}}}});
 
-    // 2. Balance Chart (Bar)
-    const ctxBal = document.getElementById('balanceChart').getContext('2d');
-    new Chart(ctxBal, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(balanceData),
-            datasets: [{
-                label: 'Average Balance ($)',
-                data: Object.values(balanceData),
-                backgroundColor: ['rgba(255, 0, 60, 0.6)', 'rgba(10, 255, 96, 0.6)'],
-                borderColor: ['#ff003c', '#0aff60'],
-                borderWidth: 1,
-                borderRadius: 2,
-                barPercentage: 0.6
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            scales: {
-                y: { 
-                    beginAtZero: true, 
-                    grid: { color: 'rgba(255,255,255,0.03)' },
-                    ticks: { color: '#8b9bb4' }
-                },
-                x: { grid: { display: false }, ticks: { color: '#ffffff', font: { weight: 'bold' } } }
-            },
-            plugins: {
-                legend: { display: false }
-            }
-        }
-    });
-
-    // 3. Age Distribution (Line)
-    function createHistogram(data, binSize=5, maxAge=90) {
-        const bins = {};
-        for (let i = 18; i <= maxAge; i += binSize) {
-            bins[i] = 0;
-        }
-        data.forEach(age => {
-            for (let b in bins) {
-                if (age >= parseInt(b) && age < parseInt(b) + binSize) {
-                    bins[b]++;
-                    break;
-                }
-            }
-        });
-        return bins;
-    }
-
-    const churnBins = createHistogram(ageChurn);
-    const stayBins = createHistogram(ageStay);
-    
-    const ctxAge = document.getElementById('ageChart').getContext('2d');
-    new Chart(ctxAge, {
-        type: 'line',
-        data: {
-            labels: Object.keys(churnBins).map(b => `${b}-${parseInt(b)+4}`),
-            datasets: [
-                {
-                    label: 'Churned',
-                    data: Object.values(churnBins),
-                    borderColor: '#ff003c',
-                    backgroundColor: 'rgba(255, 0, 60, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#ff003c',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                },
-                {
-                    label: 'Retained',
-                    data: Object.values(stayBins),
-                    borderColor: '#0aff60',
-                    backgroundColor: 'rgba(10, 255, 96, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#0aff60',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }
-            ]
-        },
-        options: {
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            scales: {
-                y: { 
-                    beginAtZero: true, 
-                    title: {display: true, text: 'Number of Customers', color: '#8b9bb4'},
-                    grid: { color: 'rgba(255,255,255,0.03)' }
-                },
-                x: { 
-                    title: {display: true, text: 'Age Group', color: '#8b9bb4'},
-                    grid: { display: false }
-                }
-            },
-            plugins: {
-                legend: { labels: { usePointStyle: true, padding: 20 } },
-                tooltip: {
-                    backgroundColor: 'rgba(5, 5, 8, 0.9)',
-                    titleColor: '#00f3ff',
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 243, 255, 0.3)'
-                }
-            }
-        }
-    });
-
+const maleData={{ male_churn|tojson }}, femaleData={{ female_churn|tojson }};
+const ggLabels=Object.keys(maleData);
+new Chart(document.getElementById('geoGenderChart'),{type:'bar',data:{
+    labels:ggLabels,
+    datasets:[
+        {label:'Male',data:Object.values(maleData),backgroundColor:'rgba(96,165,250,0.5)',borderColor:'#60a5fa',borderWidth:1,borderRadius:5,barPercentage:0.4},
+        {label:'Female',data:Object.values(femaleData),backgroundColor:'rgba(167,139,250,0.5)',borderColor:'#a78bfa',borderWidth:1,borderRadius:5,barPercentage:0.4}
+    ]},
+    options:{maintainAspectRatio:false,
+        scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}},
+        plugins:{legend:{position:'top',labels:{usePointStyle:true,padding:16,color:'#e2e8f0'}},
+            tooltip:{...T,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}%`}}}}});
 </script>
 {% endblock %}

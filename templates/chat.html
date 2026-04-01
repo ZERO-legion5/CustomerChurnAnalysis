@@ -1,30 +1,225 @@
 {% extends "base.html" %}
 
+{% block head %}
+<style>
+    .chat-sidebar-card {
+        background: rgba(167,139,250,0.05);
+        border: 1px solid rgba(167,139,250,0.14);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+    }
+    .chat-sidebar-label {
+        font-size: 0.63rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 3px;
+    }
+    .chat-sidebar-value {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+        line-height: 1.2;
+    }
+    .chip-area {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        padding: 10px 14px 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .chip {
+        background: rgba(167,139,250,0.07);
+        border: 1px solid rgba(167,139,250,0.18);
+        color: #c4b5fd;
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 0.73rem;
+        cursor: pointer;
+        transition: all 0.18s;
+        white-space: nowrap;
+    }
+    .chip:hover {
+        background: rgba(167,139,250,0.18);
+        border-color: rgba(167,139,250,0.45);
+    }
+    #chatBox {
+        flex-grow: 1;
+        padding: 1rem 1.2rem;
+        overflow-y: auto;
+        background: rgba(0,0,0,0.12);
+    }
+    .msg-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 14px;
+        align-items: flex-start;
+    }
+    .msg-row.user-row { flex-direction: row-reverse; }
+    .msg-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    .msg-avatar.bot-av  { background: rgba(167,139,250,0.12); color: var(--secondary-color); border: 1px solid rgba(167,139,250,0.25); }
+    .msg-avatar.user-av { background: rgba(0,243,255,0.08);   color: var(--primary-color);   border: 1px solid rgba(0,243,255,0.18); }
+    .msg-bubble {
+        max-width: 80%;
+        padding: 10px 14px;
+        font-size: 0.875rem;
+        line-height: 1.65;
+    }
+    .bot-bubble {
+        background: rgba(22,22,40,0.95);
+        border: 1px solid rgba(167,139,250,0.14);
+        border-radius: 4px 12px 12px 12px;
+        color: var(--text-primary);
+    }
+    .user-bubble {
+        background: rgba(0,243,255,0.07);
+        border: 1px solid rgba(0,243,255,0.14);
+        border-radius: 12px 4px 12px 12px;
+        color: var(--text-primary);
+    }
+    .typing-dots { display: flex; gap: 5px; padding: 4px 2px; }
+    .typing-dots span {
+        width: 7px; height: 7px;
+        background: var(--secondary-color);
+        border-radius: 50%;
+        animation: tdot 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes tdot {
+        0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+        40%            { opacity: 1;   transform: scale(1.12); }
+    }
+    .msg-bubble strong  { color: #e2e8f0; }
+    .msg-bubble em      { color: #cbd5e1; }
+    .msg-bubble ul, .msg-bubble ol { margin: 6px 0 6px 18px; padding: 0; }
+    .msg-bubble li      { margin-bottom: 3px; }
+    .msg-bubble code    { background: rgba(0,243,255,0.08); padding: 1px 5px; border-radius: 3px; font-size: 0.8rem; }
+    .msg-bubble p       { margin: 0 0 6px 0; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center fade-in h-100">
-    <div class="col-lg-10 col-xl-8 h-100">
-        <div class="card shadow mb-4" style="height: 85vh; display: flex; flex-direction: column;">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold"><i class="fas fa-robot me-2"></i>AI Data Analyst</h6>
-                <span class="badge bg-secondary">System Online</span>
-            </div>
-            
-            <!-- Chat Container: Scrollable -->
-            <div class="card-body p-0 d-flex flex-column" style="overflow: hidden;">
-                <div id="chatBox" class="chat-box" style="flex-grow: 1; padding: 1.5rem; overflow-y: auto; background: rgba(0,0,0,0.2);">
-                    <div class="message bot">
-                        Hello! I am ChurnGuard AI. I have access to the full dataset statistics. Ask me anything about customer churn patterns!
+<div class="page-banner fade-in mb-4" style="border-left-color:var(--secondary-color);background:linear-gradient(90deg,rgba(167,139,250,0.04) 0%,rgba(13,17,23,0) 100%)">
+    <div class="page-banner-icon" style="background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.25);color:var(--secondary-color)">
+        <i class="fas fa-robot"></i>
+    </div>
+    <div class="flex-grow-1">
+        <div class="page-banner-title">AI Analyst Chat</div>
+        <p class="page-banner-sub">Multi-turn intelligence. Ask anything about churn patterns, model metrics, or retention strategy.</p>
+    </div>
+    <span class="badge d-none d-md-inline-flex px-3 py-2" style="background:rgba(167,139,250,0.1);color:var(--secondary-color);border:1px solid rgba(167,139,250,0.2)"><i class="fas fa-brain me-1"></i>Gemini 2.0 Flash</span>
+</div>
+
+<div class="row fade-in g-4">
+    <!-- Sidebar -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <div style="position:sticky;top:80px">
+            <div class="card shadow mb-3">
+                <div class="card-header py-2">
+                    <small class="text-uppercase" style="letter-spacing:1.5px;font-size:0.68rem;color:var(--text-muted)"><i class="fas fa-database me-1"></i>Live Dataset Stats</small>
+                </div>
+                <div class="card-body p-3">
+                    <div class="chat-sidebar-card">
+                        <div class="chat-sidebar-label">Total Customers</div>
+                        <div class="chat-sidebar-value">{{ "{:,}".format(total_customers) }}</div>
+                    </div>
+                    <div class="chat-sidebar-card">
+                        <div class="chat-sidebar-label">Overall Churn Rate</div>
+                        <div class="chat-sidebar-value" style="color:#f87171">{{ churn_rate }}%</div>
+                    </div>
+                    <div class="chat-sidebar-card">
+                        <div class="chat-sidebar-label">Riskiest Geography</div>
+                        <div class="chat-sidebar-value" style="font-size:1.05rem">{{ riskiest_geo }} <small class="text-danger" style="font-size:0.85rem">{{ riskiest_geo_rate }}%</small></div>
+                    </div>
+                    <div class="chat-sidebar-card mb-0">
+                        <div class="chat-sidebar-label">Top Churn Driver (SHAP)</div>
+                        <div class="chat-sidebar-value" style="font-size:1rem;color:#fbbf24">{{ top_shap_feature }}</div>
                     </div>
                 </div>
-                
-                <!-- Input Area: Fixed at bottom -->
-                <div class="p-3 bg-dark border-top border-secondary">
-                    <div class="input-group">
-                        <input type="text" id="userInput" class="form-control border-secondary" placeholder="Ask a question (e.g., 'What is the churn rate in Germany?')">
-                        <button class="btn btn-primary px-4" type="button" id="btnSend">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
+            </div>
+            <div class="card shadow">
+                <div class="card-header py-2">
+                    <small class="text-uppercase" style="letter-spacing:1.5px;font-size:0.68rem;color:var(--text-muted)"><i class="fas fa-brain me-1"></i>Model Metrics</small>
+                </div>
+                <div class="card-body p-3">
+                    <div class="chat-sidebar-card">
+                        <div class="chat-sidebar-label">Accuracy</div>
+                        <div class="chat-sidebar-value">
+                            {% if model_acc %}{{ model_acc }}%{% else %}<span class="text-muted" style="font-size:0.8rem">Computing…</span>{% endif %}
+                        </div>
                     </div>
+                    <div class="chat-sidebar-card mb-0">
+                        <div class="chat-sidebar-label">ROC-AUC</div>
+                        <div class="chat-sidebar-value">
+                            {% if model_auc %}{{ model_auc }}%{% else %}<span class="text-muted" style="font-size:0.8rem">Computing…</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Interface -->
+    <div class="col-lg-9">
+        <div class="card shadow" style="height:82vh;display:flex;flex-direction:column;">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold"><i class="fas fa-comments me-2" style="color:var(--secondary-color)"></i>AI Data Analyst</h6>
+                <div class="d-flex align-items-center gap-3">
+                    <small class="text-muted d-none d-sm-inline" id="turnCounter" style="font-size:0.7rem">0 turns</small>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnExport" title="Export transcript">
+                        <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">Export</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" id="btnClear" title="Clear chat">
+                        <i class="fas fa-trash me-1"></i><span class="d-none d-sm-inline">Clear</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Suggested question chips -->
+            <div class="chip-area" id="chipArea">
+                <span class="chip">What is the overall churn rate?</span>
+                <span class="chip">Which geography churns most?</span>
+                <span class="chip">How does activity status affect churn?</span>
+                <span class="chip">What are the top SHAP features?</span>
+                <span class="chip">Explain the model performance</span>
+                <span class="chip">Which customer segment is most at risk?</span>
+                <span class="chip">How does number of products affect churn?</span>
+                <span class="chip">Give me 3 retention strategies</span>
+            </div>
+
+            <!-- Chat messages -->
+            <div id="chatBox" class="d-flex flex-column">
+                <div class="msg-row">
+                    <div class="msg-avatar bot-av"><i class="fas fa-robot"></i></div>
+                    <div class="msg-bubble bot-bubble">
+                        Hello! I'm <strong>ChurnGuard AI</strong>, your banking intelligence analyst. I have full access to dataset statistics, model performance metrics, and SHAP feature importances. My context is retained across turns — feel free to ask follow-up questions.<br><br>
+                        Try: <em>"What is Germany's churn rate?"</em> or <em>"Which features drive churn the most?"</em>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="p-3 border-top border-secondary mt-auto">
+                <div class="input-group">
+                    <input type="text" id="userInput" class="form-control border-secondary bg-transparent text-white"
+                           placeholder="Ask about churn patterns, model metrics, or retention strategy…" autocomplete="off">
+                    <button class="btn btn-primary px-4" type="button" id="btnSend">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -34,71 +229,147 @@
 
 {% block scripts %}
 <script>
-    const chatBox = document.getElementById('chatBox');
-    const userInput = document.getElementById('userInput');
-    const btnSend = document.getElementById('btnSend');
+    const chatBox     = document.getElementById('chatBox');
+    const userInput   = document.getElementById('userInput');
+    const btnSend     = document.getElementById('btnSend');
+    const btnClear    = document.getElementById('btnClear');
+    const btnExport   = document.getElementById('btnExport');
+    const turnCounter = document.getElementById('turnCounter');
 
-    // Auto-scroll to bottom
-    function scrollToBottom() {
-        chatBox.scrollTop = chatBox.scrollHeight;
+    let chatHistory = [];  // [{role:'user'|'model', text:'...'}]
+
+    function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
+
+    // Lightweight markdown → HTML renderer
+    function renderMarkdown(raw) {
+        let t = raw
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/\*\*(.*?)\*\*/gs, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/gs, '<em>$1</em>')
+            .replace(/`([^`\n]+)`/g, '<code>$1</code>');
+        // Bullet and numbered lists
+        t = t.replace(/^[ \t]*[-•] (.+)$/gm, '<li>$1</li>');
+        t = t.replace(/^[ \t]*\d+\. (.+)$/gm, '<li>$1</li>');
+        t = t.replace(/(<li>[\s\S]*?<\/li>)(\n<li>|$)/g, (m, li, next) => li + (next ? '\n<li>' : ''));
+        t = t.replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+        // Paragraphs
+        t = t.replace(/\n{2,}/g, '\n\n').split('\n\n')
+              .map(p => p.startsWith('<ul>') || p.startsWith('<ol>') ? p : `<p>${p.replace(/\n/g,'<br>')}</p>`)
+              .join('');
+        return t;
     }
 
-    function appendMessage(text, sender) {
-        const div = document.createElement('div');
-        div.className = `message ${sender}`;
-        div.innerHTML = text.replace(/\n/g, '<br>'); // Simple formatting
-        chatBox.appendChild(div);
+    function appendBotMessage(html) {
+        const row = document.createElement('div');
+        row.className = 'msg-row';
+        row.innerHTML = `<div class="msg-avatar bot-av"><i class="fas fa-robot"></i></div>
+            <div class="msg-bubble bot-bubble">${html}</div>`;
+        chatBox.appendChild(row);
         scrollToBottom();
+        return row;
+    }
+
+    function appendUserMessage(text) {
+        const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const row = document.createElement('div');
+        row.className = 'msg-row user-row';
+        row.innerHTML = `<div class="msg-avatar user-av"><i class="fas fa-user"></i></div>
+            <div class="msg-bubble user-bubble">${safe}</div>`;
+        chatBox.appendChild(row);
+        scrollToBottom();
+    }
+
+    function showTyping() {
+        const row = document.createElement('div');
+        row.className = 'msg-row';
+        row.id = 'typingIndicator';
+        row.innerHTML = `<div class="msg-avatar bot-av"><i class="fas fa-robot"></i></div>
+            <div class="msg-bubble bot-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+        chatBox.appendChild(row);
+        scrollToBottom();
+    }
+
+    function removeTyping() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+
+    function updateTurnCounter() {
+        const turns = chatHistory.filter(h => h.role === 'user').length;
+        if (turnCounter) turnCounter.textContent = `${turns} turn${turns !== 1 ? 's' : ''} · context retained`;
     }
 
     async function sendMessage() {
         const text = userInput.value.trim();
         if (!text) return;
-
-        // Add user message
-        appendMessage(text, 'user');
+        appendUserMessage(text);
         userInput.value = '';
         userInput.disabled = true;
-        btnSend.disabled = true;
-
-        // Show typing indicator
-        const loadingId = 'loading-' + Date.now();
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'message bot';
-        loadingDiv.id = loadingId;
-        loadingDiv.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
-        chatBox.appendChild(loadingDiv);
-        scrollToBottom();
+        btnSend.disabled   = true;
+        showTyping();
 
         try {
-            const response = await fetch('/chat', {
+            const res  = await fetch('/chat', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ message: text })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: chatHistory })
             });
-            const data = await response.json();
-
-            // Remove loading indicator
-            document.getElementById(loadingId).remove();
+            const data = await res.json();
+            removeTyping();
 
             if (data.success) {
-                appendMessage(data.reply, 'bot');
+                chatHistory.push({ role: 'user',  text });
+                chatHistory.push({ role: 'model', text: data.reply });
+                appendBotMessage(renderMarkdown(data.reply));
+                updateTurnCounter();
+                document.getElementById('chipArea').style.display = 'none';
             } else {
-                appendMessage("Sorry, I encountered an error: " + data.error, 'bot text-danger');
+                appendBotMessage(`<span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Error: ${data.error}</span>`);
             }
-        } catch (error) {
-            document.getElementById(loadingId).remove();
-            appendMessage("Network error. Please try again.", 'bot text-danger');
+        } catch (err) {
+            removeTyping();
+            appendBotMessage('<span class="text-danger"><i class="fas fa-wifi me-1"></i>Network error. Please try again.</span>');
         } finally {
             userInput.disabled = false;
-            btnSend.disabled = false;
+            btnSend.disabled   = false;
             userInput.focus();
         }
     }
 
-    btnSend.addEventListener('click', sendMessage);
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+    // Chip clicks → populate input
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            userInput.value = chip.textContent.trim();
+            userInput.focus();
+        });
     });
+
+    // Clear chat
+    btnClear.addEventListener('click', () => {
+        chatHistory = [];
+        chatBox.innerHTML = '';
+        appendBotMessage('Chat cleared. How can I help you?');
+        document.getElementById('chipArea').style.display = 'flex';
+        updateTurnCounter();
+    });
+
+    // Export transcript as .txt
+    btnExport.addEventListener('click', () => {
+        if (!chatHistory.length) { alert('Nothing to export yet.'); return; }
+        let txt = 'ChurnGuard AI Analyst — Chat Transcript\n';
+        txt    += '=========================================\n\n';
+        chatHistory.forEach(h => {
+            txt += `[${h.role === 'user' ? 'You' : 'ChurnGuard AI'}]\n${h.text}\n\n`;
+        });
+        const a = Object.assign(document.createElement('a'), {
+            href: URL.createObjectURL(new Blob([txt], {type:'text/plain'})),
+            download: 'churnguard_chat_transcript.txt'
+        });
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+
+    btnSend.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
 </script>
 {% endblock %}
